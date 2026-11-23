@@ -1,0 +1,2360 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EUROGUÍA UE — Guía Turística Oficial de los 27 Países</title>
+    <!-- Tailwind CSS vía CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- D3.js v7 y TopoJSON Client v3 -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+    <!-- Google Fonts: Plus Jakarta Sans e Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+			theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        euBlue: '#003399',
+                        euBlueDark: '#002266',
+                        euGold: '#FFCC00',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .view-section {
+            display: none;
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        .view-section.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes kenBurns {
+            0% { transform: scale(1) translate(0, 0); }
+            50% { transform: scale(1.08) translate(-1%, -1%); }
+            100% { transform: scale(1) translate(0, 0); }
+        }
+        .hero-video-motion {
+            animation: kenBurns 18s ease-in-out infinite;
+        }
+        .hero-video-paused {
+            animation-play-state: paused;
+        }
+
+        .dropdown-bridge::before {
+            content: "";
+            position: absolute;
+            top: -16px;
+            left: 0;
+            right: 0;
+            height: 16px;
+            background: transparent;
+        }
+
+        /* Estilos del Mapa Cartográfico Real D3 + TopoJSON */
+        #d3-eu-map-container svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: grab;
+        }
+        #d3-eu-map-container svg:active {
+            cursor: grabbing;
+        }
+        .country-eu {
+            fill: #2563eb;
+            stroke: #071124;
+            stroke-width: 0.75px;
+            stroke-linejoin: round;
+            cursor: pointer;
+            transition: fill 0.18s ease, filter 0.18s ease;
+        }
+        .country-eu:hover,
+        .country-eu.highlighted {
+            fill: #FFCC00 !important;
+            filter: drop-shadow(0 0 7px rgba(255, 204, 0, 0.8));
+        }
+        .country-non-eu {
+            fill: #1e293b;
+            stroke: #0f172a;
+            stroke-width: 0.6px;
+            stroke-linejoin: round;
+            cursor: default;
+        }
+        .microstate-pin {
+            fill: rgba(37, 99, 235, 0.55);
+            stroke: #FFCC00;
+            stroke-width: 1.4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .microstate-pin:hover,
+        .microstate-pin.highlighted {
+            fill: #FFCC00;
+            r: 8.5px;
+        }
+
+        @keyframes zonePop {
+            0% { opacity: 0.3; transform: scale(0.98); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .zone-animate {
+            animation: zonePop 0.35s ease-out forwards;
+        }
+
+        .gallery-swap {
+            animation: imgSwap 0.28s ease-out forwards;
+        }
+        @keyframes imgSwap {
+            from { opacity: 0.45; transform: scale(1.015); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+		
+		/* Adaptación automática a Modo Oscuro */
+        html.dark body { background-color: #020617; color: #f1f5f9; }
+        html.dark header { background-color: rgba(15, 23, 42, 0.92); border-color: #1e293b; }
+        html.dark .bg-white { background-color: #0f172a !important; }
+        html.dark .bg-slate-50, html.dark .bg-slate-50\/70 { background-color: #1e293b !important; }
+        html.dark .bg-slate-100 { background-color: #1e293b !important; }
+        html.dark .bg-blue-50, html.dark .bg-blue-50\/80 { background-color: rgba(30, 58, 138, 0.35) !important; }
+        html.dark .border-slate-200, html.dark .border-slate-100, html.dark .border-blue-100 { border-color: #334155 !important; }
+        html.dark .text-slate-900, html.dark .text-slate-800 { color: #f8fafc !important; }
+        html.dark .text-slate-700, html.dark .text-slate-600 { color: #cbd5e1 !important; }
+        html.dark .text-slate-500, html.dark .text-slate-400 { color: #94a3b8 !important; }
+        html.dark .text-euBlue { color: #60a5fa !important; }
+        html.dark input, html.dark select { color: #f8fafc !important; background-color: #0f172a !important; }
+		html.dark .bg-white\/95 { background-color: rgba(15, 23, 42, 0.9) !important; border: 1px solid rgba(255, 255, 255, 0.15); }
+	</style>
+</head>
+<body class="min-h-full bg-slate-50 text-slate-800 flex flex-col font-sans antialiased selection:bg-euBlue selection:text-white">
+
+    <!-- ================= TOOLTIP FLOTANTE DINÁMICO ================= -->
+    <div id="map-tooltip" class="fixed pointer-events-none hidden bg-slate-900/95 backdrop-blur-md text-white border border-euGold/80 rounded-2xl p-3.5 shadow-2xl max-w-xs transition-opacity duration-100" style="z-index: 9500;">
+        <div class="flex items-center space-x-2.5 mb-1.5">
+            <img id="tt-flag-img" src="" alt="Bandera" class="w-7 h-5 object-cover rounded shadow-sm border border-white/20">
+            <div>
+                <h4 id="tt-name" class="font-display font-bold text-sm text-white leading-tight">País</h4>
+                <span id="tt-region" class="text-[11px] text-euGold font-semibold">Región</span>
+            </div>
+        </div>
+        <div class="text-xs text-slate-300 space-y-1 border-t border-slate-700/80 pt-2 mt-1">
+            <div class="flex justify-between gap-4">
+                <span class="text-slate-400">Capital:</span>
+                <span id="tt-capital" class="font-bold text-white">--</span>
+            </div>
+            <div class="flex justify-between gap-4">
+                <span class="text-slate-400">Moneda:</span>
+                <span id="tt-currency" class="font-semibold text-white">--</span>
+            </div>
+            <div class="flex justify-between gap-4">
+                <span class="text-slate-400">Población:</span>
+                <span id="tt-population" class="font-semibold text-slate-200">--</span>
+            </div>
+        </div>
+        <div class="mt-2 pt-1.5 border-t border-slate-800 text-[11px] text-euGold font-bold flex items-center justify-center">
+            <i class="fa-solid fa-hand-pointer mr-1.5"></i> Haz clic para ver guía y zona aleatoria
+        </div>
+    </div>
+
+    <!-- ================= MODAL DE MENSAJES ================= -->
+    <div id="custom-modal" class="fixed inset-0 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm hidden p-4" style="z-index: 10000;">
+        <div id="modal-box" class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200 transform scale-95 opacity-0 transition-all duration-200">
+            <div class="flex items-center space-x-3 mb-3">
+                <div class="w-10 h-10 rounded-full bg-blue-100 text-euBlue flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-circle-info"></i>
+                </div>
+                <h3 id="modal-title" class="font-display text-lg font-bold text-slate-900">Información</h3>
+            </div>
+            <p id="modal-body" class="text-sm text-slate-600 leading-relaxed mb-6"></p>
+            <div class="flex justify-end">
+                <button onclick="closeCustomModal()" class="bg-euBlue hover:bg-euBlueDark text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors cursor-pointer">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 1. NAVBAR FIJO SUPERIOR ================= -->
+    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                
+                <!-- Izquierda: Logo / Icono Interactivo -->
+                <button onclick="navigateTo('home')" class="flex items-center space-x-3 text-left group cursor-pointer focus:outline-none">
+                    <div class="w-11 h-11 rounded-2xl bg-euBlue text-euGold flex items-center justify-center shadow-md group-hover:scale-105 transition-transform relative">
+                        <i class="fa-solid fa-earth-europe text-xl"></i>
+                        <span class="absolute -top-1 -right-1 text-[10px] bg-euGold text-euBlue font-extrabold px-1.5 py-0.5 rounded-full shadow">27</span>
+                    </div>
+                    <div>
+                        <span class="font-display text-lg font-extrabold tracking-tight text-euBlue block leading-none">EUROGUÍA <span class="text-amber-500">UE</span></span>
+                        <span class="text-[11px] font-medium text-slate-500 block mt-1">Guía Oficial • 27 Países</span>
+                    </div>
+                </button>
+
+                <!-- Centro / Derecha: Menú Desplegable "Qué hacer ▾" + Botón "Dónde ir" -->
+                <nav class="hidden md:flex items-center space-x-2">
+                    <button onclick="navigateTo('home')" id="nav-home" class="nav-link px-4 py-2.5 rounded-xl text-sm font-semibold text-euBlue bg-blue-50 transition-colors cursor-pointer">
+                        <i class="fa-solid fa-house mr-1.5"></i> Inicio
+                    </button>
+
+                    <div class="relative group" id="what-dropdown-wrapper">
+                        <button onclick="toggleWhatDropdown(event)" id="nav-what" class="nav-link px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:text-euBlue hover:bg-slate-100 transition-colors flex items-center space-x-1.5 cursor-pointer">
+                            <i class="fa-solid fa-compass text-euBlue"></i>
+                            <span>Qué hacer</span>
+                            <i id="what-chevron" class="fa-solid fa-chevron-down text-xs transition-transform duration-200 group-hover:rotate-180"></i>
+                        </button>
+                        
+                        <div id="what-dropdown-menu" class="dropdown-bridge absolute left-0 top-full mt-2 w-[26rem] hidden group-hover:block z-50">
+                            <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl p-4">
+                                <div class="mb-3">
+                                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2 px-1">Explorar por Categoría</span>
+                                    <div class="grid grid-cols-2 gap-1.5">
+                                        <button onclick="openCatalogWithCategory('Cultura e Historia'); closeWhatDropdown();" class="text-left px-3 py-2 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-euBlue text-xs font-semibold text-slate-700 transition-colors flex items-center space-x-2 cursor-pointer">
+                                            <i class="fa-solid fa-landmark text-euBlue"></i><span>Cultura e Historia</span>
+                                        </button>
+                                        <button onclick="openCatalogWithCategory('Costa e Islas'); closeWhatDropdown();" class="text-left px-3 py-2 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-euBlue text-xs font-semibold text-slate-700 transition-colors flex items-center space-x-2 cursor-pointer">
+                                            <i class="fa-solid fa-umbrella-beach text-amber-500"></i><span>Costa e Islas</span>
+                                        </button>
+                                        <button onclick="openCatalogWithCategory('Naturaleza y Montaña'); closeWhatDropdown();" class="text-left px-3 py-2 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-euBlue text-xs font-semibold text-slate-700 transition-colors flex items-center space-x-2 cursor-pointer">
+                                            <i class="fa-solid fa-mountain-sun text-emerald-600"></i><span>Naturaleza y Montaña</span>
+                                        </button>
+                                        <button onclick="openCatalogWithCategory('Gastronomía y Ciudades'); closeWhatDropdown();" class="text-left px-3 py-2 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-euBlue text-xs font-semibold text-slate-700 transition-colors flex items-center space-x-2 cursor-pointer">
+                                            <i class="fa-solid fa-utensils text-rose-500"></i><span>Gastronomía y Ciudades</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="px-1 py-1.5 flex items-center justify-between border-t border-slate-100 mb-1.5">
+                                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Destinos Destacados</span>
+                                    <span class="text-[11px] font-bold text-euBlue bg-blue-50 px-2 py-0.5 rounded-full">27 Países UE</span>
+                                </div>
+                                <div id="navbar-featured-destinations" class="space-y-1 max-h-52 overflow-y-auto pr-1"></div>
+                                <div class="mt-3 pt-2 border-t border-slate-100">
+                                    <button onclick="openCatalogWithCategory('all'); closeWhatDropdown();" class="w-full py-2.5 px-3 bg-euBlue hover:bg-euBlueDark text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center space-x-2 cursor-pointer">
+                                        <span>Ver todos los destinos y recomendaciones</span>
+                                        <i class="fa-solid fa-arrow-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="navigateTo('where')" id="nav-where" class="nav-link px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:text-euBlue hover:bg-slate-100 transition-colors flex items-center space-x-1.5 cursor-pointer">
+                        <i class="fa-solid fa-map-location-dot text-amber-500"></i>
+                        <span>Dónde ir</span>
+                    </button>
+                </nav>
+
+                <!-- Buscador Rápido -->
+                <div class="hidden lg:block relative w-64">
+                    <div class="flex items-center bg-slate-100 border border-slate-200 focus-within:border-euBlue focus-within:bg-white rounded-xl px-3.5 py-2 transition-all">
+                        <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs mr-2"></i>
+                        <input type="text" id="navbar-search-input" placeholder="Buscar país o capital..." autocomplete="off"
+                               class="bg-transparent text-sm text-slate-800 placeholder-slate-400 focus:outline-none w-full"
+                               oninput="handleNavbarSearch(this.value)" onfocus="handleNavbarSearch(this.value)">
+                    </div>
+                    <div id="navbar-search-results" class="hidden absolute right-0 top-full mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 max-h-80 overflow-y-auto z-50"></div>
+                </div>
+				
+				<!-- Botón Modo Oscuro / Claro -->
+                <button onclick="toggleDarkMode()" id="theme-toggle-btn" aria-label="Cambiar tema claro u oscuro"
+                        class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer flex items-center justify-center">
+                    <i id="theme-toggle-icon" class="fa-solid fa-moon text-base"></i>
+                </button>
+
+                <!-- Botón Hamburguesa Móvil -->
+                <button onclick="toggleMobileDrawer()" aria-label="Abrir menú" class="md:hidden p-2.5 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
+                    <i id="mobile-drawer-icon" class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Menú Desplegable Móvil -->
+        <div id="mobile-drawer" class="hidden md:hidden bg-white border-t border-slate-200 px-4 pt-3 pb-6 space-y-3 shadow-xl">
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                <input type="text" placeholder="Buscar país o capital..." oninput="handleMobileSearch(this.value)"
+                       class="w-full bg-slate-100 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-euBlue">
+                <div id="mobile-search-results" class="hidden mt-1 bg-slate-50 border border-slate-200 rounded-xl p-1.5 max-h-48 overflow-y-auto"></div>
+            </div>
+            <div class="space-y-1">
+                <button onclick="navigateTo('home'); toggleMobileDrawer();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-slate-800 hover:bg-blue-50 hover:text-euBlue flex items-center space-x-3">
+                    <i class="fa-solid fa-house w-5 text-euBlue"></i><span>Inicio</span>
+                </button>
+                <button onclick="navigateTo('where'); toggleMobileDrawer();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-slate-800 hover:bg-blue-50 hover:text-euBlue flex items-center space-x-3">
+                    <i class="fa-solid fa-map-location-dot w-5 text-amber-500"></i><span>Dónde ir (Mapa Interactivo UE)</span>
+                </button>
+                <button onclick="openCatalogWithCategory('all'); toggleMobileDrawer();" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-slate-800 hover:bg-blue-50 hover:text-euBlue flex items-center space-x-3">
+                    <i class="fa-solid fa-compass w-5 text-euBlue"></i><span>Qué hacer (Catálogo 27 Países)</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= CONTENIDO PRINCIPAL ================= -->
+    <main class="flex-grow">
+
+        <!-- =====================================================================
+             2. VISTA INICIAL ('Inicial')
+        ====================================================================== -->
+        <section id="view-home" class="view-section active">
+            <div class="relative bg-slate-950 text-white overflow-hidden">
+                <div class="absolute inset-0 overflow-hidden bg-gradient-to-br from-euBlueDark via-slate-900 to-slate-950">
+                    <img id="hero-reel-img"
+                         src="https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=1920&q=80"
+                         alt="Presentación visual Unión Europea"
+                         class="w-full h-full object-cover opacity-50 hero-video-motion transition-opacity duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/75 to-slate-950/25"></div>
+                </div>
+
+                <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-32">
+                    <div class="max-w-2xl">
+                        <div class="inline-flex items-center space-x-2 bg-euBlue/85 border border-euGold/60 backdrop-blur-md text-euGold text-xs font-bold px-4 py-1.5 rounded-full mb-6 shadow-lg">
+                            <i class="fa-solid fa-star"></i>
+                            <span>27 Estados Miembros • 27 Capitales • Zonas Aleatorias</span>
+                        </div>
+                        <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight mb-5">
+                            Viaja por Europa, <span class="text-euGold">descubre sus capitales</span> y sorpréndete
+                        </h1>
+                        <p id="hero-reel-caption" class="text-base sm:text-lg text-slate-200 leading-relaxed mb-8">
+                            Explora el mapa interactivo de los 27 países de la Unión Europea, conoce sus capitales y deja que nuestra ruleta turística elija una zona popular inolvidable para ti.
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <button onclick="navigateTo('where')" class="bg-euGold hover:bg-yellow-400 text-slate-950 font-extrabold px-7 py-4 rounded-2xl shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center justify-center space-x-2.5 cursor-pointer">
+                                <i class="fa-solid fa-map-location-dot text-lg"></i>
+                                <span>Ir al Mapa Interactivo UE</span>
+                            </button>
+                            <button onclick="openRandomCountry()" class="bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/30 text-white font-bold px-7 py-4 rounded-2xl transition-all flex items-center justify-center space-x-2.5 cursor-pointer">
+                                <i class="fa-solid fa-shuffle text-euGold"></i>
+                                <span>País Aleatorio de la UE</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Controles estilo Reproductor de Vídeo -->
+                    <div class="mt-12 flex flex-wrap items-center justify-between gap-4 bg-slate-900/75 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 max-w-xl">
+                        <div class="flex items-center space-x-3">
+                            <button onclick="toggleHeroVideoPlay()" id="hero-play-btn" aria-label="Pausar o reanudar presentación"
+                                    class="w-10 h-10 rounded-xl bg-euGold text-slate-950 hover:bg-yellow-400 flex items-center justify-center font-bold transition-colors cursor-pointer">
+                                <i id="hero-play-icon" class="fa-solid fa-pause"></i>
+                            </button>
+                            <button onclick="toggleHeroAudio()" id="hero-audio-btn" aria-label="Activar o silenciar narración"
+                                    class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer">
+                                <i id="hero-audio-icon" class="fa-solid fa-volume-xmark"></i>
+                            </button>
+                            <div>
+                                <span id="hero-reel-badge" class="text-[11px] font-bold uppercase tracking-wider text-euGold block">Presentación Visual UE • En reproducción</span>
+                                <span id="hero-reel-location" class="text-xs text-slate-300">Castillos de Baviera, Alemania</span>
+                            </div>
+                        </div>
+                        <button onclick="nextHeroSlide()" class="text-xs font-bold text-slate-300 hover:text-euGold px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
+                            Siguiente escena <i class="fa-solid fa-forward-step ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección Inferior: Información General y Curiosidades -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <div class="text-center max-w-3xl mx-auto mb-12">
+                    <span class="text-xs font-bold uppercase tracking-widest text-euBlue">Información General y Curiosidades</span>
+                    <h2 class="font-display text-3xl font-extrabold text-slate-900 mt-2">Lo que hace única a la Unión Europea</h2>
+                    <p class="text-slate-600 text-sm sm:text-base mt-3">
+                        Un espacio compartido de 448 millones de habitantes donde cada frontera abre la puerta a una lengua, una gastronomía y un patrimonio milenario distinto.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-euBlue flex items-center justify-center text-xl mb-4">
+                            <i class="fa-solid fa-passport"></i>
+                        </div>
+                        <h3 class="font-display font-bold text-slate-900 text-lg mb-2">Espacio Schengen</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed">
+                            Permite viajar libremente entre la mayoría de Estados miembros sin controles fronterizos interiores, facilitando rutas en tren o coche.
+                        </p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-4">
+                            <i class="fa-solid fa-euro-sign"></i>
+                        </div>
+                        <h3 class="font-display font-bold text-slate-900 text-lg mb-2">La Eurozona</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed">
+                            20 países de la UE utilizan el Euro (€) como moneda oficial, eliminando comisiones de cambio en gran parte del continente.
+                        </p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-4">
+                            <i class="fa-solid fa-landmark"></i>
+                        </div>
+                        <h3 class="font-display font-bold text-slate-900 text-lg mb-2">Patrimonio UNESCO</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed">
+                            Más de 400 sitios declarados Patrimonio de la Humanidad se concentran en la UE: desde la Acrópolis hasta la Alhambra o Brujas.
+                        </p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl mb-4">
+                            <i class="fa-solid fa-language"></i>
+                        </div>
+                        <h3 class="font-display font-bold text-slate-900 text-lg mb-2">24 Lenguas Oficiales</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed">
+                            Un mosaico cultural único con 24 idiomas oficiales y tres alfabetos distintos (latino, griego y cirílico) unidos bajo una misma bandera.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Destinos Destacados de Hoy -->
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-widest text-euBlue">Inspiración Aleatoria</span>
+                        <h2 class="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">Destinos Destacados de Hoy</h2>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="renderHomeFeatured()" class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-euBlue text-slate-700 hover:text-euBlue text-xs font-bold transition-colors flex items-center space-x-1.5 cursor-pointer">
+                            <i class="fa-solid fa-rotate"></i>
+                            <span>Nuevos destinos</span>
+                        </button>
+                        <button onclick="openCatalogWithCategory('all')" class="px-4 py-2.5 rounded-xl bg-euBlue hover:bg-euBlueDark text-white text-xs font-bold transition-colors flex items-center space-x-1.5 cursor-pointer">
+                            <span>Ver los 27 países</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="home-featured-cards" class="grid grid-cols-1 md:grid-cols-3 gap-8"></div>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             3. VISTA 'DÓNDE IR' — MAPA INTERACTIVO REAL DE LA UE
+        ====================================================================== -->
+        <section id="view-where" class="view-section">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-widest text-euBlue">Cartografía Interactiva Oficial</span>
+                        <h2 class="font-display text-3xl font-extrabold text-slate-900 mt-1">Dónde ir: Mapa Interactivo de la Unión Europea</h2>
+                        <p class="text-slate-600 text-sm mt-1">
+                            Mantén el ratón sobre cualquier país azul para ver sus datos flotantes junto al cursor, usa el zoom o arrastra, y haz clic para abrir su guía.
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-4 bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-sm text-xs">
+                        <span class="flex items-center space-x-1.5"><span class="w-3.5 h-3.5 rounded bg-blue-600 inline-block"></span><span class="font-semibold text-slate-700">Miembro UE (27)</span></span>
+                        <span class="flex items-center space-x-1.5"><span class="w-3.5 h-3.5 rounded bg-euGold inline-block"></span><span class="font-semibold text-slate-700">Activo</span></span>
+                        <span class="flex items-center space-x-1.5"><span class="w-3.5 h-3.5 rounded bg-slate-800 inline-block"></span><span class="text-slate-500">Resto de Europa</span></span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950 rounded-3xl p-4 sm:p-5 shadow-2xl border border-slate-800 relative overflow-hidden mb-10">
+                    <div class="flex items-center justify-between text-xs text-slate-400 mb-3 px-1">
+                        <span><i class="fa-solid fa-computer-mouse text-euGold mr-1.5"></i> Pasa el ratón sobre cualquier país o pin (Malta / Luxemburgo) • Haz clic para entrar</span>
+                        <span id="map-source-badge" class="hidden sm:inline text-slate-500">Cartografía Vectorial UE</span>
+                    </div>
+
+                    <div id="d3-eu-map-container" class="relative w-full h-[460px] sm:h-[580px] rounded-2xl bg-[#071124] border border-slate-800/90 overflow-hidden">
+                        <div id="map-loading-state" class="absolute inset-0 flex flex-col items-center justify-center text-slate-300 text-xs space-y-2">
+                            <i class="fa-solid fa-spinner fa-spin text-2xl text-euGold"></i>
+                            <span>Inicializando mapa cartográfico de Europa...</span>
+                        </div>
+
+                        <div class="absolute bottom-4 right-4 flex flex-col bg-slate-900/90 backdrop-blur-md border border-slate-700 rounded-xl overflow-hidden shadow-lg z-20">
+                            <button onclick="zoomMapBy(1.45)" title="Acercar" class="p-3 text-slate-200 hover:text-euGold hover:bg-slate-800 border-b border-slate-700 transition-colors cursor-pointer">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                            </button>
+                            <button onclick="zoomMapBy(0.7)" title="Alejar" class="p-3 text-slate-200 hover:text-euGold hover:bg-slate-800 border-b border-slate-700 transition-colors cursor-pointer">
+                                <i class="fa-solid fa-minus text-xs"></i>
+                            </button>
+                            <button onclick="resetMapZoom()" title="Restablecer vista" class="p-3 text-slate-200 hover:text-euGold hover:bg-slate-800 transition-colors cursor-pointer">
+                                <i class="fa-solid fa-expand text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Directorio Rápido de los 27 Estados Miembros -->
+                <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h3 class="font-display text-xl font-extrabold text-slate-900">Directorio Rápido de los 27 Estados Miembros</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Filtra por región europea o pasa el ratón para resaltarlo directamente en el mapa superior.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2" id="map-region-pills">
+                            <button onclick="setMapGridRegion('all')" data-map-region="all" class="map-reg-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-euBlue text-white transition-colors cursor-pointer">Todos (27)</button>
+                            <button onclick="setMapGridRegion('Occidental')" data-map-region="Occidental" class="map-reg-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer">Occidental</button>
+                            <button onclick="setMapGridRegion('Mediterránea')" data-map-region="Mediterránea" class="map-reg-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer">Mediterránea</button>
+                            <button onclick="setMapGridRegion('Central')" data-map-region="Central" class="map-reg-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer">Central y Oriental</button>
+                            <button onclick="setMapGridRegion('Nórdica')" data-map-region="Nórdica" class="map-reg-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer">Nórdica y Báltica</button>
+                        </div>
+                    </div>
+
+                    <div id="map-bottom-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             4. VISTA 'QUÉ HACER' — CATÁLOGO DE 27 PAÍSES
+        ====================================================================== -->
+        <section id="view-what" class="view-section">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="text-center max-w-3xl mx-auto mb-10">
+                    <span class="text-xs font-bold uppercase tracking-widest text-euBlue">Experiencias en la Unión Europea</span>
+                    <h2 class="font-display text-3xl sm:text-4xl font-extrabold text-slate-900 mt-1">¿Qué hacer en los 27 Países de la UE?</h2>
+                    <p class="text-slate-600 text-sm sm:text-base mt-2">
+                        Selecciona una categoría temática o busca cualquier destino para explorar su capital y sortear una zona turística popular con fotografías reales.
+                    </p>
+                </div>
+
+                <div class="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm mb-8 flex flex-col lg:flex-row gap-4 justify-between items-center">
+                    <div class="flex flex-wrap gap-2 justify-center lg:justify-start" id="category-filter-pills">
+                        <button onclick="setCatalogCategory('all')" data-cat="all" class="cat-pill px-4 py-2 rounded-xl text-xs font-bold bg-euBlue text-white transition-colors cursor-pointer">
+                            Todos (27)
+                        </button>
+                        <button onclick="setCatalogCategory('Cultura e Historia')" data-cat="Cultura e Historia" class="cat-pill px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer">
+                            <i class="fa-solid fa-landmark mr-1"></i> Cultura e Historia
+                        </button>
+                        <button onclick="setCatalogCategory('Costa e Islas')" data-cat="Costa e Islas" class="cat-pill px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer">
+                            <i class="fa-solid fa-umbrella-beach mr-1"></i> Costa e Islas
+                        </button>
+                        <button onclick="setCatalogCategory('Naturaleza y Montaña')" data-cat="Naturaleza y Montaña" class="cat-pill px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer">
+                            <i class="fa-solid fa-mountain-sun mr-1"></i> Naturaleza y Montaña
+                        </button>
+                        <button onclick="setCatalogCategory('Gastronomía y Ciudades')" data-cat="Gastronomía y Ciudades" class="cat-pill px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer">
+                            <i class="fa-solid fa-utensils mr-1"></i> Gastronomía y Ciudades
+                        </button>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                        <select id="catalog-sort-select" onchange="renderCatalogCards()" class="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-euBlue cursor-pointer">
+                            <option value="az">Orden: País (A-Z)</option>
+                            <option value="za">Orden: País (Z-A)</option>
+                            <option value="capital">Orden: Capital (A-Z)</option>
+                        </select>
+
+                        <div class="relative w-full sm:w-64">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                            <input type="text" id="catalog-search-input" placeholder="Buscar país, capital o lugar..."
+                                   oninput="renderCatalogCards()"
+                                   class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-euBlue">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="catalog-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             5. PÁGINA INFORMATIVA DE PAÍS (DETALLE + CAPITAL + ZONA ALEATORIA)
+        ====================================================================== -->
+        <section id="view-detail" class="view-section">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+                    <button onclick="navigateTo(previousView || 'where')" class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-euBlue text-slate-700 hover:text-euBlue text-sm font-semibold shadow-sm transition-colors cursor-pointer">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Volver atrás</span>
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="navigateTo('where')" class="px-4 py-2.5 rounded-xl bg-blue-50 text-euBlue hover:bg-blue-100 text-xs font-bold transition-colors cursor-pointer">
+                            <i class="fa-solid fa-map-location-dot mr-1"></i> Volver al Mapa UE
+                        </button>
+                        <button onclick="openRandomCountry()" class="px-4 py-2.5 rounded-xl bg-amber-100 text-amber-900 hover:bg-amber-200 text-xs font-bold transition-colors cursor-pointer">
+                            <i class="fa-solid fa-shuffle mr-1"></i> Explorar otro país aleatorio
+                        </button>
+                    </div>
+                </div>
+
+                <article class="bg-white rounded-3xl border border-slate-200 shadow-lg overflow-hidden">
+                    <!-- Cabecera Principal del País -->
+                    <div class="relative h-64 sm:h-80 w-full bg-gradient-to-br from-euBlueDark via-euBlue to-slate-900">
+                        <img id="detail-hero-img" src="" alt="Paisaje del país" class="w-full h-full object-cover opacity-85 transition-opacity duration-300">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/45 to-transparent"></div>
+                        <div class="absolute bottom-6 left-6 right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4 text-white">
+                            <div>
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <img id="detail-flag-img" src="" alt="Bandera" class="w-10 h-7 object-cover rounded-md shadow-md border border-white/30">
+                                    <span id="detail-region-badge" class="bg-euBlue/90 border border-white/25 backdrop-blur-md text-euGold text-xs font-bold px-3 py-1 rounded-full">Unión Europea</span>
+                                </div>
+                                <h1 id="detail-name" class="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">País</h1>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Datos Clave -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 border-b border-slate-200 bg-slate-50/70">
+                        <div class="p-4 sm:p-5 border-r border-b sm:border-b-0 border-slate-200">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Capital Oficial</span>
+                            <span id="detail-capital" class="text-sm sm:text-base font-extrabold text-euBlue mt-0.5 block">--</span>
+                        </div>
+                        <div class="p-4 sm:p-5 sm:border-r border-b sm:border-b-0 border-slate-200">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Población</span>
+                            <span id="detail-population" class="text-sm sm:text-base font-bold text-slate-800 mt-0.5 block">--</span>
+                        </div>
+                        <div class="p-4 sm:p-5 border-r border-slate-200">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Idioma Oficial</span>
+                            <span id="detail-language" class="text-sm sm:text-base font-bold text-slate-800 mt-0.5 block">--</span>
+                        </div>
+                        <div class="p-4 sm:p-5">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Moneda</span>
+                            <span id="detail-currency" class="text-sm sm:text-base font-bold text-emerald-700 mt-0.5 block">--</span>
+                        </div>
+                    </div>
+
+                    <div class="p-6 sm:p-8 space-y-8">
+                        <div>
+                            <h2 class="font-display text-xl font-extrabold text-slate-900 mb-3 flex items-center">
+                                <i class="fa-solid fa-book-open text-euBlue mr-2.5"></i> Información General del País
+                            </h2>
+                            <p id="detail-description" class="text-slate-600 text-sm sm:text-base leading-relaxed">
+                                Descripción general...
+                            </p>
+                        </div>
+
+                        <div class="bg-blue-50/80 border border-blue-100 rounded-2xl p-6 flex flex-col sm:flex-row items-start gap-4">
+                            <div class="w-12 h-12 rounded-2xl bg-euBlue text-euGold flex items-center justify-center text-xl flex-shrink-0 shadow">
+                                <i class="fa-solid fa-landmark-dome"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-euBlue">Capital Destacada</span>
+                                <h3 id="detail-capital-heading" class="font-display text-lg font-extrabold text-slate-900 mt-0.5 mb-1.5">--</h3>
+                                <p id="detail-capital-text" class="text-slate-700 text-sm leading-relaxed">
+                                    Información cultural y arquitectónica de la capital...
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- ZONA TURÍSTICA POPULAR ALEATORIA CON GALERÍA REAL INTERACTIVA -->
+                        <div id="detail-random-zone-card" class="pt-4 border-t border-slate-200">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                                <div>
+                                    <span class="inline-flex items-center space-x-1.5 bg-amber-100 text-amber-800 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                                        <i class="fa-solid fa-dice"></i>
+                                        <span>Zona Turística Popular Aleatoria</span>
+                                    </span>
+                                    <h2 id="detail-zone-title" class="font-display text-2xl font-extrabold text-slate-900 mt-2">Nombre de la Zona</h2>
+                                </div>
+                                <button onclick="rerollRandomZone()" class="self-start sm:self-auto bg-euBlue hover:bg-euBlueDark text-white text-xs font-bold px-4 py-3 rounded-xl shadow-md transition-all flex items-center space-x-2 cursor-pointer">
+                                    <i class="fa-solid fa-shuffle text-euGold"></i>
+                                    <span>Sortear otra zona turística popular</span>
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                                <div class="lg:col-span-7 space-y-3">
+                                    <!-- Imagen Principal de la Zona -->
+                                    <div class="relative rounded-2xl overflow-hidden border border-slate-200 shadow-sm h-64 sm:h-72 bg-slate-900">
+                                        <img id="detail-zone-main-img" src="" alt="Zona turística recomendada" class="w-full h-full object-cover">
+                                        <span id="detail-zone-photo-counter" class="absolute bottom-3 right-3 bg-slate-950/75 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">
+                                            Foto 1 de 3
+                                        </span>
+                                    </div>
+                                    <!-- Miniaturas Interactivas Clicables -->
+                                    <div>
+                                        <div id="detail-zone-thumbs" class="grid grid-cols-3 gap-3"></div>
+                                        <p class="text-[11px] text-slate-400 mt-1.5 flex items-center">
+                                            <i class="fa-solid fa-hand-pointer text-euBlue mr-1.5"></i> Haz clic en las miniaturas para ver distintas vistas reales de esta zona
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="lg:col-span-5 bg-slate-50 border border-slate-200 rounded-2xl p-6 space-y-4">
+                                    <h4 class="font-display font-bold text-slate-900 text-base">¿Por qué visitar esta zona?</h4>
+                                    <p id="detail-zone-desc" class="text-slate-600 text-sm leading-relaxed">
+                                        Descripción de la zona...
+                                    </p>
+                                    <div class="pt-3 border-t border-slate-200">
+                                        <span class="text-xs font-extrabold uppercase tracking-wider text-slate-800 block mb-3">
+                                            <i class="fa-solid fa-location-dot text-euBlue mr-1"></i> Puntos imprescindibles:
+                                        </span>
+                                        <ul id="detail-zone-highlights" class="space-y-2 text-sm text-slate-700"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+					<div class="pt-6 border-t border-slate-200">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                                <div>
+                                    <span class="inline-flex items-center space-x-1.5 bg-rose-100 text-rose-800 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                                        <i class="fa-solid fa-utensils"></i>
+                                        <span>Gastronomía Típica</span>
+                                    </span>
+                                    <h2 class="font-display text-2xl font-extrabold text-slate-900 mt-2">Platos Imprescindibles del País</h2>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button type="button" onclick="prevFoodSlide()" aria-label="Plato anterior"
+                                            class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-euBlue text-slate-700 hover:text-white flex items-center justify-center transition-colors cursor-pointer">
+                                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                                    </button>
+                                    <span id="food-carousel-counter" class="text-xs font-bold text-slate-500 px-2">1 / 3</span>
+                                    <button type="button" onclick="nextFoodSlide()" aria-label="Siguiente plato"
+                                            class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-euBlue text-slate-700 hover:text-white flex items-center justify-center transition-colors cursor-pointer">
+                                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-6">
+                                <!-- Imagen del plato -->
+                                <div class="lg:col-span-6 relative rounded-2xl overflow-hidden h-60 sm:h-64 bg-slate-900 shadow-sm border border-slate-200">
+                                    <img id="food-carousel-img" src="" alt="Plato típico" class="w-full h-full object-cover">
+                                    <div id="food-carousel-dots" class="absolute bottom-3 left-1/2 -translate-x-1/2 flex space-x-2 bg-slate-950/65 backdrop-blur-md px-3 py-1.5 rounded-full"></div>
+                                </div>
+
+                                <!-- Nombre y descripción dinámica que cambia con cada foto -->
+                                <div class="lg:col-span-6 space-y-3">
+                                    <span id="food-carousel-tag" class="text-xs font-bold uppercase tracking-wider text-rose-600 block">Especialidad Local</span>
+                                    <h3 id="food-carousel-title" class="font-display text-xl sm:text-2xl font-extrabold text-slate-900">--</h3>
+                                    <p id="food-carousel-desc" class="text-slate-600 text-sm sm:text-base leading-relaxed">
+                                        Descripción del plato típico...
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    <!-- SECCIÓN DE BAILES Y TRADICIONES -->
+                        <div class="pt-6 border-t border-slate-200">
+                            <div class="mb-5">
+                                <span class="inline-flex items-center space-x-1.5 bg-purple-100 text-purple-800 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                                    <i class="fa-solid fa-masks-theater"></i>
+                                    <span>Folclore y Cultura Viva</span>
+                                </span>
+                                <h2 class="font-display text-2xl font-extrabold text-slate-900 mt-2">Bailes y Tradiciones Típicas</h2>
+                            </div>
+                            <div id="detail-traditions-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+                        </div>
+					</div>
+                </article>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="bg-slate-950 text-slate-400 border-t border-slate-800 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-euBlue text-euGold flex items-center justify-center font-bold">
+                    <i class="fa-solid fa-earth-europe"></i>
+                </div>
+                <div>
+                    <span class="text-white font-display font-bold text-sm block">EUROGUÍA UE</span>
+                    <span class="text-xs text-slate-500">Guía Turística de los 27 Estados Miembros</span>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 text-center">
+                Todos los 27 países de la Unión Europea • Capitales y Zonas Turísticas Populares Aleatorias.
+            </p>
+            <div class="flex space-x-4 text-xs">
+                <button onclick="openInfoModal('Acerca de EUROGUÍA UE', 'Guía turística interactiva responsive diseñada para explorar los 27 Estados miembros de la Unión Europea, sus capitales y descubrir zonas turísticas reales mediante la API de Wikipedia y Wikimedia Commons.')" class="hover:text-white transition-colors cursor-pointer">Acerca de</button>
+                <button onclick="navigateTo('where')" class="hover:text-euGold transition-colors cursor-pointer">Mapa Interactivo</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ================= LÓGICA Y BASE DE DATOS DE LOS 27 PAÍSES ================= -->
+    <script>
+        // =========================================================================
+        // MOTOR DE FOTOGRAFÍAS REALES (WIKIPEDIA + WIKIMEDIA COMMONS API)
+        // Garantiza que cada país y cada zona turística muestre fotos 100% reales
+        // de ese lugar exacto, sin enlaces muertos ni fotos de otros países.
+        // =========================================================================
+        const mediaCache = new Map();
+
+        function getFlagUrl(iso2, width = 160) {
+            return `https://flagcdn.com/w${width}/${iso2.toLowerCase()}.png`;
+        }
+
+        async function fetchWikiLeadImage(articleTitle, fallbackUrl) {
+            const cacheKey = `wiki:${articleTitle}`;
+            if (mediaCache.has(cacheKey)) return mediaCache.get(cacheKey);
+
+            const tryLang = async (lang) => {
+                const url = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(articleTitle)}&prop=pageimages&redirects=1&format=json&pithumbsize=1200&origin=*`;
+                const res = await fetch(url);
+                const data = await res.json();
+                const pages = data?.query?.pages || {};
+                const page = Object.values(pages)[0];
+                const src = page?.thumbnail?.source || null;
+                if (src && !src.toLowerCase().endsWith('.svg') && !src.toLowerCase().includes('map')) {
+                    return src;
+                }
+                return null;
+            };
+
+            try {
+                const imgSrc = (await tryLang('es')) || (await tryLang('en')) || fallbackUrl;
+                mediaCache.set(cacheKey, imgSrc);
+                return imgSrc;
+            } catch (e) {
+                return fallbackUrl;
+            }
+        }
+
+        async function fetchZonePhotos(wikiTitles, fallbackUrl) {
+            const promises = wikiTitles.map(title => fetchWikiLeadImage(title, fallbackUrl));
+            const results = await Promise.all(promises);
+            const unique = [...new Set(results.filter(Boolean))];
+            return unique.length > 0 ? unique : [fallbackUrl];
+        }
+
+        const EU_COUNTRIES = [
+            {
+                id: "es", isoNumeric: "724", name: "España", region: "Mediterránea", category: "Costa e Islas",
+                population: "48,6 millones", language: "Español", currency: "Euro (€)", capital: "Madrid",
+                heroWiki: "Palacio Real de Madrid",
+                capitalDesc: "Madrid deslumbra con su Triángulo del Arte (Museos del Prado, Reina Sofía y Thyssen), el Palacio Real, el Parque del Retiro y una vida cultural y gastronómica vibrante.",
+                description: "Situada en la península ibérica, España combina un legado histórico romano, árabe y renacentista con miles de kilómetros de costas mediterráneas y atlánticas.",
+                zones: [
+                    { name: "Costa Brava y Barcelona Modernista", wikis: ["Templo Expiatorio de la Sagrada Familia", "Tosa de Mar", "Parque Güell"], desc: "Calas escarpadas de aguas cristalinas en Girona unidas a las obras maestras arquitectónicas de Antoni Gaudí en Barcelona.", highlights: ["Basílica de la Sagrada Familia", "Calas y murallas de Tossa de Mar", "Park Güell y Barrio Gótico"] },
+                    { name: "Andalucía y la Alhambra de Granada", wikis: ["Alhambra", "Generalife", "Albaicín"], desc: "El corazón del arte nazarí, patios floridos, arquitectura mudéjar y miradores históricos frente a Sierra Nevada.", highlights: ["Patio de los Leones y Palacios Nazaríes", "Jardines del Generalife", "Mirador de San Nicolás en el Albaicín"] },
+                    { name: "Islas Baleares (Mallorca y Menorca)", wikis: ["Cala Macarella", "Catedral de Santa María de Palma de Mallorca", "Sierra de Tramontana"], desc: "Archipiélago mediterráneo célebre por sus calas turquesas, pueblos de piedra en la Serra de Tramuntana y gastronomía marinera.", highlights: ["Cala Macarelleta en Menorca", "Catedral de Palma de Mallorca", "Port de Sóller y Serra de Tramuntana"] }
+                ]
+            },
+            {
+                id: "fr", isoNumeric: "250", name: "Francia", region: "Occidental", category: "Gastronomía y Ciudades",
+                population: "68,4 millones", language: "Francés", currency: "Euro (€)", capital: "París",
+                heroWiki: "Torre Eiffel",
+                capitalDesc: "París, la Ciudad de la Luz, cautiva con la Torre Eiffel, el Museo del Louvre, Montmartre y los paseos históricos junto al río Sena.",
+                description: "Primer destino turístico mundial, Francia destaca por su refinada gastronomía, sus regiones vinícolas, castillos renacentistas y paisajes que van de los Alpes al Mediterráneo.",
+                zones: [
+                    { name: "Costa Azul (Riviera Francesa)", wikis: ["Niza", "Èze", "Cannes"], desc: "Glamour mediterráneo entre Niza, Cannes y pueblos medievales colgados sobre acantilados frente al mar.", highlights: ["Promenade des Anglais en Niza", "Pueblo medieval de Èze", "Cannes y Antibes"] },
+                    { name: "Valle del Loira y sus Castillos", wikis: ["Castillo de Chambord", "Castillo de Chenonceau", "Castillo de Villandry"], desc: "El 'Jardín de Francia', salpicado de majestuosos castillos renacentistas rodeados de viñedos y bosques.", highlights: ["Castillo de Chambord", "Castillo de Chenonceau", "Jardines de Villandry"] },
+                    { name: "Mont Saint-Michel y Normandía", wikis: ["Monte Saint-Michel", "Abadía del Monte Saint-Michel", "Étretat"], desc: "Una abadía gótica coronando un islote rocoso rodeado por las mareas más espectaculares de Europa.", highlights: ["Abadía del Mont Saint-Michel", "Bahía y mareas de Normandía", "Acantilados de Étretat"] }
+                ]
+            },
+            {
+                id: "it", isoNumeric: "380", name: "Italia", region: "Mediterránea", category: "Cultura e Historia",
+                population: "58,9 millones", language: "Italiano", currency: "Euro (€)", capital: "Roma",
+                heroWiki: "Coliseo",
+                capitalDesc: "Roma es la Ciudad Eterna: un museo vivo donde conviven el Coliseo Imperial, el Panteón, la Fontana di Trevi y la Ciudad del Vaticano.",
+                description: "Cuna del Imperio Romano y del Renacimiento, Italia atesora la mayor cantidad de bienes Patrimonio de la Humanidad junto a una gastronomía admirada globalmente.",
+                zones: [
+                    { name: "Costa Amalfitana y Capri", wikis: ["Positano", "Amalfi", "Capri"], desc: "Pueblos verticales de colores pastel suspendidos sobre el mar Tirreno entre limoneros y miradores.", highlights: ["Positano y Amalfi", "Sendero de los Dioses", "Gruta Azul en Capri"] },
+                    { name: "La Toscana y Florencia", wikis: ["Catedral de Santa María del Fiore", "Piazza del Campo", "San Gimignano"], desc: "Colinas onduladas de cipreses, viñedos de Chianti y la cuna artística del Renacimiento italiano.", highlights: ["Duomo y Galería Uffizi en Florencia", "Plaza del Campo en Siena", "San Gimignano"] },
+                    { name: "Venecia y su Laguna", wikis: ["Gran Canal de Venecia", "Plaza de San Marcos", "Puente de Rialto"], desc: "Palacios góticos y renacentistas alzados sobre más de cien islas unidas por canales y puentes históricos.", highlights: ["Plaza y Basílica de San Marcos", "Gran Canal y Puente de Rialto", "Santa Maria della Salute"] }
+                ]
+            },
+            {
+                id: "de", isoNumeric: "276", name: "Alemania", region: "Central", category: "Cultura e Historia",
+                population: "84,4 millones", language: "Alemán", currency: "Euro (€)", capital: "Berlín",
+                heroWiki: "Puerta de Brandeburgo",
+                capitalDesc: "Berlín fusiona historia contemporánea y vanguardia cultural con la Puerta de Brandeburgo, la Isla de los Museos y el East Side Gallery.",
+                description: "Situada en el corazón de Europa, Alemania ofrece castillos de cuento de hadas, extensos bosques, rutas románticas medievales y ciudades vibrantes.",
+                zones: [
+                    { name: "Ruta Romántica y Castillos de Baviera", wikis: ["Castillo de Neuschwanstein", "Rothenburg ob der Tauber", "Marienplatz"], desc: "Palacios alpinos de ensueño y ciudades amuralladas perfectamente conservadas en el sur alemán.", highlights: ["Castillo de Neuschwanstein", "Rothenburg ob der Tauber", "Múnich y Marienplatz"] },
+                    { name: "La Selva Negra (Schwarzwald)", wikis: ["Selva Negra", "Lago Titisee", "Friburgo de Brisgovia"], desc: "Montañas boscosas, lagos glaciares, cascadas y pueblos tradicionales de entramado de madera.", highlights: ["Lago Titisee", "Cascadas de Triberg", "Friburgo de Brisgovia"] },
+                    { name: "Berlín Histórico y Cultural", wikis: ["Puerta de Brandeburgo", "Edificio del Reichstag", "Catedral de Berlín"], desc: "Monumento emblemático de la reunificación europea y museos de talla mundial junto al río Spree.", highlights: ["Puerta de Brandeburgo", "Isla de los Museos", "Parlamento Reichstag"] }
+                ]
+            },
+            {
+                id: "pt", isoNumeric: "620", name: "Portugal", region: "Occidental", category: "Costa e Islas",
+                population: "10,6 millones", language: "Portugués", currency: "Euro (€)", capital: "Lisboa",
+                heroWiki: "Torre de Belém",
+                capitalDesc: "Lisboa enamora con sus siete colinas, los tranvías amarillos de Alfama, la Torre de Belém y los miradores sobre el estuario del Tajo.",
+                description: "Abierto al océano Atlántico, Portugal destaca por su hospitalidad, su música fado, azulejos históricos, vinos de Oporto y playas doradas.",
+                zones: [
+                    { name: "Sintra y Costa de Cascais", wikis: ["Palacio Nacional de la Pena", "Quinta da Regaleira", "Cabo da Roca"], desc: "Palacios románticos envueltos en bosques místicos a pocos kilómetros del punto más occidental de Europa continental.", highlights: ["Palacio da Pena", "Quinta da Regaleira", "Cabo da Roca"] },
+                    { name: "El Algarve y sus Acantilados", wikis: ["Ponta da Piedade", "Benagil", "Praia da Marinha"], desc: "Formaciones rocosas doradas, cuevas marinas y playas atlánticas de aguas cristalinas en el sur.", highlights: ["Cueva de Benagil", "Ponta da Piedade en Lagos", "Praia da Marinha"] },
+                    { name: "Oporto y Valle del Duero", wikis: ["Puente Don Luis I", "Oporto", "Librería Lello"], desc: "Casco histórico ribereño y paisajes de viñedos centenarios escalonados junto al río Duero.", highlights: ["Puente Don Luis I y Ribeira", "Librería Lello", "Bodegas de Vila Nova de Gaia"] }
+                ]
+            },
+            {
+                id: "gr", isoNumeric: "300", name: "Grecia", region: "Mediterránea", category: "Costa e Islas",
+                population: "10,4 millones", language: "Griego", currency: "Euro (€)", capital: "Atenas",
+                heroWiki: "Partenón",
+                capitalDesc: "Atenas es la cuna de la civilización occidental, presidida por el Partenón en la Acrópolis y el animado barrio histórico de Plaka.",
+                description: "Entre monumentos de la Antigüedad clásica y miles de islas bañadas por los mares Egeo y Jónico, Grecia es sinónimo de historia y luz mediterránea.",
+                zones: [
+                    { name: "Islas Cícladas (Santorini y Mykonos)", wikis: ["Oia", "Santorini", "Miconos"], desc: "Arquitectura blanca y azul sobre acantilados volcánicos con algunas de las puestas de sol más famosas del mundo.", highlights: ["Pueblo de Oia y caldera de Santorini", "Pequeña Venecia en Mykonos", "Playa Roja de Akrotiri"] },
+                    { name: "Monasterios de Meteora", wikis: ["Meteora", "Monasterio del Gran Meteoro", "Kalambaka"], desc: "Monasterios ortodoxos medievales construidos en la cima de imponentes pilares naturales de roca arenisca.", highlights: ["Monasterio del Gran Meteoro", "Monasterio de Rousanou", "Miradores de Kalambaka"] },
+                    { name: "Atenas Clásica y la Acrópolis", wikis: ["Acrópolis de Atenas", "Partenón", "Erecteón"], desc: "Templos de mármol pentélico del siglo V a.C. que dominan toda la capital griega.", highlights: ["El Partenón y Erecteion", "Museo de la Acrópolis", "Barrio de Plaka y Ágora Antigua"] }
+                ]
+            },
+            {
+                id: "nl", isoNumeric: "528", name: "Países Bajos", region: "Occidental", category: "Gastronomía y Ciudades",
+                population: "17,9 millones", language: "Neerlandés", currency: "Euro (€)", capital: "Ámsterdam",
+                heroWiki: "Ámsterdam",
+                capitalDesc: "Ámsterdam brilla por su anillo de canales Patrimonio UNESCO, casas estrechas del Siglo de Oro y museos dedicados a Van Gogh y Rembrandt.",
+                description: "País de ingenieros del agua, bicicletas, campos de tulipanes primaverales y molinos históricos que conservan el encanto tradicional holandés.",
+                zones: [
+                    { name: "Zaanse Schans y Ruta de los Molinos", wikis: ["Zaanse Schans", "Keukenhof", "Volendam"], desc: "Molinos de viento operativos, talleres tradicionales y paisajes de pólderes típicos de Holanda Septentrional.", highlights: ["Molinos históricos de Zaanse Schans", "Jardines de Keukenhof", "Pueblo pesquero de Volendam"] },
+                    { name: "Canales Históricos de Ámsterdam", wikis: ["Canales de Ámsterdam", "Rijksmuseum", "Jordaan"], desc: "Más de cien kilómetros de canales concéntricos bordeados de casas inclinadas y puentes iluminados.", highlights: ["Barrio de Jordaan", "Museo Van Gogh y Rijksmuseum", "Mercado flotante de flores"] },
+                    { name: "Molinos de Kinderdijk", wikis: ["Kinderdijk", "Róterdam", "Delft"], desc: "Conjunto de 19 molinos del siglo XVIII declarados Patrimonio de la Humanidad por la UNESCO.", highlights: ["Red de molinos de Kinderdijk", "Rutas ciclistas junto al dique", "Centro histórico de Delft"] }
+                ]
+            },
+            {
+                id: "be", isoNumeric: "056", name: "Bélgica", region: "Occidental", category: "Gastronomía y Ciudades",
+                population: "11,8 millones", language: "Neerlandés, Francés y Alemán", currency: "Euro (€)", capital: "Bruselas",
+                heroWiki: "Grand-Place de Bruselas",
+                capitalDesc: "Bruselas es la capital de la Unión Europea y deslumbra con la Grand-Place barroca, el Atomium y su tradición chocolatera.",
+                description: "Encrucijada cultural de Europa occidental famosa por sus ciudades medievales flamencas, cervezas artesanales y arquitectura gótica.",
+                zones: [
+                    { name: "Brujas y Gante Medievales", wikis: ["Brujas", "Gante", "Castillo de los Condes de Flandes"], desc: "Canales románticos, campanarios góticos y plazas empedradas que transportan directamente al siglo XV.", highlights: ["Muelle del Rosario en Brujas", "Castillo de los Condes en Gante", "Beaterio Ten Wijngaerde"] },
+                    { name: "Amberes y la Ruta del Arte Flamenco", wikis: ["Amberes", "Catedral de Amberes", "Estación de Amberes-Central"], desc: "Capital mundial del diamante y hogar del pintor Pedro Pablo Rubens, con una estación central monumental.", highlights: ["Catedral de Nuestra Señora", "Casa-Museo de Rubens", "Estación Antwerpen-Centraal"] },
+                    { name: "Las Ardenas y Dinant", wikis: ["Dinant", "Ciudadela de Dinant", "Castillo de Bouillon"], desc: "Colinas boscosas, ríos encajonados y ciudadelas fortificadas en la región valona.", highlights: ["Ciudadela de Dinant", "Castillo de Bouillon", "Durbuy"] }
+                ]
+            },
+            {
+                id: "lu", isoNumeric: "442", name: "Luxemburgo", region: "Occidental", category: "Cultura e Historia",
+                population: "672 mil", language: "Luxemburgués, Francés y Alemán", currency: "Euro (€)", capital: "Luxemburgo",
+                heroWiki: "Ciudad de Luxemburgo",
+                capitalDesc: "La ciudad de Luxemburgo sorprende por su casco antiguo suspendido sobre profundos desfiladeros y sus fortificaciones subterráneas.",
+                description: "El único Gran Ducado soberano del mundo ofrece un entorno verde repleto de castillos medievales, viñedos en el valle del Mosela y transporte público gratuito.",
+                zones: [
+                    { name: "Casamatas del Bock y Barrio de Grund", wikis: ["Grund (Luxemburgo)", "Bock (Luxemburgo)", "Palacio Gran Ducal de Luxemburgo"], desc: "Kilómetros de galerías defensivas excavadas en la roca sobre el valle del río Alzette.", highlights: ["Casamatas del Bock", "Balcón de Europa (Chemin de la Corniche)", "Palacio Gran Ducal"] },
+                    { name: "Castillo de Vianden", wikis: ["Castillo de Vianden", "Vianden", "Castillo de Bourscheid"], desc: "Una de las residencias feudales más grandes e impresionantes al oeste del Rin, rodeada de bosques.", highlights: ["Castillo de Vianden", "Telesilla panorámico", "Castillo de Bourscheid"] },
+                    { name: "Región de Müllerthal (Pequeña Suiza)", wikis: ["Pequeña Suiza luxemburguesa", "Echternach", "Abadía de Echternach"], desc: "Formaciones rocosas de arenisca, gargantas estrechas y cascadas rodeadas de hayedos.", highlights: ["Cascada Schiessentümpel", "Abadía de Echternach", "Sendero Müllerthal Trail"] }
+                ]
+            },
+            {
+                id: "at", isoNumeric: "040", name: "Austria", region: "Central", category: "Naturaleza y Montaña",
+                population: "9,1 millones", language: "Alemán", currency: "Euro (€)", capital: "Viena",
+                heroWiki: "Palacio de Schönbrunn",
+                capitalDesc: "Viena es sinónimo de música clásica, palacios imperiales de los Habsburgo como Schönbrunn y cafés históricos Patrimonio UNESCO.",
+                description: "País alpino por excelencia, Austria cautiva con sus cumbres nevadas, lagos cristalinos y una herencia imperial y musical incomparable.",
+                zones: [
+                    { name: "Hallstatt y Región de Salzkammergut", wikis: ["Hallstatt", "Salzkammergut", "Lago Wolfgang"], desc: "Pueblo alpino de postal a orillas de un lago glaciar rodeado de montañas escarpadas y minas de sal milenarias.", highlights: ["Mirador clásico de Hallstatt", "Mina de sal Salzwelten", "Lago Wolfgangsee"] },
+                    { name: "Viena Imperial y Palacio Schönbrunn", wikis: ["Palacio de Schönbrunn", "Palacio Belvedere", "Ópera Estatal de Viena"], desc: "Residencia veraniega barroca de los emperadores austriacos rodeada de jardines monumentales.", highlights: ["Palacio y Glorieta de Schönbrunn", "Ópera Estatal de Viena", "Palacio Belvedere"] },
+                    { name: "Salzburgo y la Fortaleza Hohensalzburg", wikis: ["Fortaleza de Hohensalzburg", "Salzburgo", "Palacio de Mirabell"], desc: "Ciudad barroca natal de Mozart coronada por una de las fortalezas medievales más grandes de Europa.", highlights: ["Fortaleza Hohensalzburg", "Palacio y Jardines de Mirabell", "Calle Getreidegasse"] }
+                ]
+            },
+            {
+                id: "ie", isoNumeric: "372", name: "Irlanda", region: "Occidental", category: "Naturaleza y Montaña",
+                population: "5,3 millones", language: "Irlandés e Inglés", currency: "Euro (€)", capital: "Dublín",
+                heroWiki: "Dublín",
+                capitalDesc: "Dublín rebosa historia literaria con la biblioteca del Trinity College, el castillo de Dublín y la música tradicional de Temple Bar.",
+                description: "Conocida como la Isla Esmeralda por sus paisajes verdes infinitos, Irlanda fascina por sus acantilados atlánticos y su hospitalidad celta.",
+                zones: [
+                    { name: "Acantilados de Moher y El Burren", wikis: ["Acantilados de Moher", "El Burren", "Doolin"], desc: "Imponentes paredes verticales que se elevan más de 200 metros sobre las olas del océano Atlántico.", highlights: ["Torre O'Brien", "Paisaje kárstico de The Burren", "Pueblo musical de Doolin"] },
+                    { name: "Anillo de Kerry y Parque Killarney", wikis: ["Parque nacional de Killarney", "Anillo de Kerry", "Castillo de Ross"], desc: "Ruta escénica por penínsulas montañosas, lagos glaciares y castillos rodeados de bosques.", highlights: ["Castillo de Ross", "Mirador Ladies View", "Cascada Torc"] },
+                    { name: "Galway y Connemara", wikis: ["Abadía de Kylemore", "Connemara", "Islas Aran"], desc: "Ciudad bohemia costeña que sirve de puerta de entrada a valles salvajes y abadías históricas.", highlights: ["Abadía de Kylemore", "Barrio Latino de Galway", "Islas Aran"] }
+                ]
+            },
+            {
+                id: "dk", isoNumeric: "208", name: "Dinamarca", region: "Nórdica", category: "Gastronomía y Ciudades",
+                population: "5,9 millones", language: "Danés", currency: "Corona danesa (DKK)", capital: "Copenhague",
+                heroWiki: "Nyhavn",
+                capitalDesc: "Copenhague lidera el diseño escandinavo y la sostenibilidad con el puerto colorido de Nyhavn, los jardines Tivoli y su cultura ciclista.",
+                description: "Puerta entre Europa continental y Escandinavia, Dinamarca destaca por su filosofía 'hygge', castillos reales y costas isleñas.",
+                zones: [
+                    { name: "Nyhavn y Castillos del Norte de Selandia", wikis: ["Nyhavn", "Castillo de Kronborg", "Castillo de Frederiksborg"], desc: "Canales históricos junto a fortalezas renacentistas como Kronborg, escenario del Hamlet de Shakespeare.", highlights: ["Puerto histórico de Nyhavn", "Castillo de Kronborg en Helsingør", "Castillo de Frederiksborg"] },
+                    { name: "Aarhus y la Península de Jutlandia", wikis: ["ARoS Aarhus Kunstmuseum", "Aarhus", "Skagen"], desc: "Museos de arte vanguardista, barrios históricos reconstruidos y extensas dunas costeras en Skagen.", highlights: ["Museo ARoS y su pasarela arcoíris", "Den Gamle By", "Cabo de Grenen en Skagen"] },
+                    { name: "Acantilados de Møns Klint", wikis: ["Møns Klint", "Møn", "Ribe"], desc: "Espectaculares acantilados de tiza blanca de 120 metros de altura sobre las aguas turquesas del Báltico.", highlights: ["Miradores de Møns Klint", "Isla de Møn", "Ciudad histórica de Ribe"] }
+                ]
+            },
+            {
+                id: "se", isoNumeric: "752", name: "Suecia", region: "Nórdica", category: "Naturaleza y Montaña",
+                population: "10,5 millones", language: "Sueco", currency: "Corona sueca (SEK)", capital: "Estocolmo",
+                heroWiki: "Gamla Stan",
+                capitalDesc: "Estocolmo se asienta sobre 14 islas unidas por 57 puentes, combinando las calles medievales de Gamla Stan con museos como el Vasa.",
+                description: "El país más extenso de Escandinavia ofrece miles de lagos, bosques boreales, diseño innovador y auroras boreales en el norte.",
+                zones: [
+                    { name: "Archipiélago de Estocolmo", wikis: ["Archipiélago de Estocolmo", "Vaxholm", "Gamla Stan"], desc: "Un mosaico natural de más de 30.000 islas, islotes y cabañas de madera roja frente al mar Báltico.", highlights: ["Fortaleza de Vaxholm", "Isla de Sandhamn", "Travesías en barco histórico"] },
+                    { name: "Laponia Sueca y Abisko", wikis: ["Parque nacional de Abisko", "Icehotel", "Kiruna"], desc: "Naturaleza ártica virgen ideal para observar auroras boreales y descubrir la cultura indígena sami.", highlights: ["Aurora Sky Station en Abisko", "Hotel de Hielo de Jukkasjärvi", "Trineos por paisajes nevados"] },
+                    { name: "Isla de Gotland y Visby", wikis: ["Visby", "Gotland", "Fårö"], desc: "Ciudad hanseática amurallada con ruinas medievales y formaciones rocosas costeras únicas llamadas raukar.", highlights: ["Muralla medieval de Visby", "Formaciones Raukar en Fårö", "Jardín Botánico DBW"] }
+                ]
+            },
+            {
+                id: "fi", isoNumeric: "246", name: "Finlandia", region: "Nórdica", category: "Naturaleza y Montaña",
+                population: "5,6 millones", language: "Finés y Sueco", currency: "Euro (€)", capital: "Helsinki",
+                heroWiki: "Catedral de Helsinki",
+                capitalDesc: "Helsinki brilla junto al Báltico con su arquitectura neoclásica y modernista, su distrito del diseño y la fortaleza marítima de Suomenlinna.",
+                description: "Conocida como el país de los mil lagos (en realidad más de 180.000) y las saunas, Finlandia ofrece aire puro y magia ártica.",
+                zones: [
+                    { name: "Laponia Finlandesa y Rovaniemi", wikis: ["Rovaniemi", "Laponia finlandesa", "Aurora polar"], desc: "El hogar oficial de Papá Noel en el Círculo Polar Ártico, con iglús de cristal bajo las auroras boreales.", highlights: ["Aldea de Papá Noel", "Safaris árticos", "Observación de auroras boreales"] },
+                    { name: "Región de los Grandes Lagos (Saimaa)", wikis: ["Saimaa", "Olavinlinna", "Savonlinna"], desc: "Laberinto azul de islas boscosas y aguas tranquilas donde habita la foca anillada de Saimaa.", highlights: ["Castillo medieval Olavinlinna", "Cruceros por el lago Saimaa", "Saunas tradicionales junto al lago"] },
+                    { name: "Fortaleza Marítima de Suomenlinna", wikis: ["Suomenlinna", "Catedral de Helsinki", "Catedral Uspenski"], desc: "Fortaleza histórica construida sobre seis islas frente al puerto de Helsinki, Patrimonio UNESCO.", highlights: ["Murallas del siglo XVIII", "Catedral de Helsinki", "Travesía en ferry por el Báltico"] }
+                ]
+            },
+            {
+                id: "pl", isoNumeric: "616", name: "Polonia", region: "Central", category: "Cultura e Historia",
+                population: "37,6 millones", language: "Polaco", currency: "Złoty polaco (PLN)", capital: "Varsovia",
+                heroWiki: "Centro histórico de Varsovia",
+                capitalDesc: "Varsovia es un símbolo de resiliencia con su Ciudad Vieja reconstruida Patrimonio UNESCO, el Parque Łazienki y modernos rascacielos.",
+                description: "Polonia combina ciudades medievales intactas, imponentes castillos teutónicos, bosques primigenios y las cumbres de los montes Tatras.",
+                zones: [
+                    { name: "Cracovia y Castillo de Wawel", wikis: ["Castillo de Wawel", "Plaza del Mercado de Cracovia", "Minas de sal de Wieliczka"], desc: "Antigua capital real con la plaza medieval más grande de Europa y catedrales subterráneas esculpidas en sal.", highlights: ["Plaza del Mercado y Lonja de los Paños", "Castillo Real de Wawel", "Minas de sal de Wieliczka"] },
+                    { name: "Montes Tatras y Zakopane", wikis: ["Morskie Oko", "Zakopane", "Montes Tatras"], desc: "La capital invernal de Polonia, rodeada de picos alpinos, lagos glaciares y arquitectura tradicional de madera.", highlights: ["Lago Morskie Oko", "Calle Krupówki", "Teleférico Kasprowy Wierch"] },
+                    { name: "Gdańsk y Castillo de Malbork", wikis: ["Castillo de Malbork", "Gdansk", "Sopot"], desc: "Perla del Báltico con fachadas hanseáticas y la fortaleza gótica de ladrillo más grande del mundo.", highlights: ["Castillo Teutónico de Malbork", "Mercado Largo de Gdańsk", "Muelle de Sopot"] }
+                ]
+            },
+            {
+                id: "cz", isoNumeric: "203", name: "República Checa", region: "Central", category: "Cultura e Historia",
+                population: "10,9 millones", language: "Checo", currency: "Corona checa (CZK)", capital: "Praga",
+                heroWiki: "Puente de Carlos",
+                capitalDesc: "Praga deslumbra con el Puente de Carlos, el Reloj Astronómico medieval y el complejo palaciego del Castillo de Praga sobre el río Moldava.",
+                description: "En el corazón de Europa Central, Chequia atesora castillos góticos, pueblos renacentistas de cuento y balnearios históricos.",
+                zones: [
+                    { name: "Český Krumlov (Bohemia del Sur)", wikis: ["Český Krumlov", "Castillo de Český Krumlov", "Castillo de Hluboká"], desc: "Ciudad medieval Patrimonio UNESCO abrazada por un meandro del río Moldava y dominada por su castillo.", highlights: ["Castillo de Český Krumlov", "Casco histórico empedrado", "Castillo de Hluboká"] },
+                    { name: "Karlovy Vary (Triángulo Balneario)", wikis: ["Karlovy Vary", "Mariánské Lázně", "Castillo de Loket"], desc: "Elegante ciudad termal rodeada de bosques con columnatas neoclásicas y manantiales minerales.", highlights: ["Columnata del Molino", "Mariánské Lázně", "Castillo de Loket"] },
+                    { name: "Paraíso Bohemio (Český ráj)", wikis: ["Paraíso Bohemio", "Castillo de Trosky", "Castillo de Karlštejn"], desc: "Formaciones rocosas de arenisca gigantes, laberintos naturales y castillos sobre cumbres volcánicas.", highlights: ["Rocas de Prachov", "Castillo de Trosky", "Castillo de Karlštejn"] }
+                ]
+            },
+            {
+                id: "sk", isoNumeric: "703", name: "Eslovaquia", region: "Central", category: "Naturaleza y Montaña",
+                population: "5,4 millones", language: "Eslovaco", currency: "Euro (€)", capital: "Bratislava",
+                heroWiki: "Castillo de Bratislava",
+                capitalDesc: "Bratislava recibe al viajero a orillas del Danubio con su castillo blanco de cuatro torres, su casco histórico peatonal y el mirador UFO.",
+                description: "Tierra de castillos medievales, cuevas de hielo subterráneas y la cordillera alpina de los Altos Tatras.",
+                zones: [
+                    { name: "Altos Tatras (Vysoké Tatry)", wikis: ["Štrbské Pleso", "Altos Tatras", "Lomnický štít"], desc: "La cordillera alpina más compacta del mundo, con lagos glaciares y rutas panorámicas de alta montaña.", highlights: ["Lago Štrbské Pleso", "Pico Lomnický štít", "Cascadas de Studený potok"] },
+                    { name: "Castillo de Spiš y Levoča", wikis: ["Castillo de Spiš", "Levoča", "Bardejov"], desc: "Uno de los conjuntos fortificados medievales más extensos de Europa Central, Patrimonio UNESCO.", highlights: ["Fortaleza de Spiš", "Altar gótico de Levoča", "Plaza medieval de Bardejov"] },
+                    { name: "Castillo de Bojnice", wikis: ["Castillo de Bojnice", "Castillo de Orava", "Banská Štiavnica"], desc: "Castillo romántico rodeado de un parque natural y fuentes termales en el centro de Eslovaquia.", highlights: ["Castillo de Bojnice", "Castillo de Orava", "Banská Štiavnica"] }
+                ]
+            },
+            {
+                id: "hu", isoNumeric: "348", name: "Hungría", region: "Central", category: "Gastronomía y Ciudades",
+                population: "9,6 millones", language: "Húngaro", currency: "Forinto húngaro (HUF)", capital: "Budapest",
+                heroWiki: "Parlamento de Hungría",
+                capitalDesc: "Budapest, la Perla del Danubio, une Buda y Pest mediante el Puente de las Cadenas, destacando su Parlamento neogótico y sus baños termales.",
+                description: "Rica en aguas termales, arquitectura Art Nouveau, música folclórica y tradiciones vinícolas como el célebre Tokaj.",
+                zones: [
+                    { name: "El Recodo del Danubio (Esztergom)", wikis: ["Basílica de Esztergom", "Visegrád", "Szentendre"], desc: "Paisaje fluvial histórico al norte de Budapest con fortalezas medievales y pueblos de artistas.", highlights: ["Basílica de Esztergom", "Ciudadela de Visegrád", "Pueblo barroco de Szentendre"] },
+                    { name: "Lago Balaton y Península de Tihany", wikis: ["Abadía de Tihany", "Lago Balaton", "Hévíz"], desc: "El mayor lago de agua dulce de Europa Central, rodeado de colinas volcánicas, abadías y balnearios.", highlights: ["Abadía Benedictina de Tihany", "Lago termal de Hévíz", "Viñedos de Badacsony"] },
+                    { name: "Balneario Széchenyi y Castillo de Buda", wikis: ["Castillo de Buda", "Bastión de los Pescadores", "Balneario Széchenyi"], desc: "Arquitectura monumental frente al Danubio y los baños termales medicinales más famosos de Europa.", highlights: ["Bastión de los Pescadores", "Baños Termales Széchenyi", "Puente de las Cadenas"] }
+                ]
+            },
+            {
+                id: "ro", isoNumeric: "642", name: "Rumanía", region: "Central", category: "Cultura e Historia",
+                population: "19,0 millones", language: "Rumano", currency: "Leu rumano (RON)", capital: "Bucarest",
+                heroWiki: "Ateneo Rumano",
+                capitalDesc: "Bucarest combina amplios bulevares de estilo parisino, el Ateneo Rumano y el monumental Palacio del Parlamento.",
+                description: "Tierra de leyendas en los Cárpatos, ciudades sajonas fortificadas en Transilvania y el biodiverso Delta del Danubio.",
+                zones: [
+                    { name: "Transilvania: Castillos de Bran y Peleș", wikis: ["Castillo de Bran", "Castillo Peleș", "Brașov"], desc: "Fortalezas medievales entre bosques de los Cárpatos y el lujoso palacio neorrenacentista de Sinaia.", highlights: ["Castillo de Bran", "Castillo de Peleș en Sinaia", "Ciudadela medieval de Brașov"] },
+                    { name: "Carretera Transfăgărășan y Montes Făgăraș", wikis: ["Transfăgărășan", "Lago Bâlea", "Sibiu"], desc: "Una de las carreteras panorámicas más espectaculares del mundo cruzando las cumbres de los Cárpatos.", highlights: ["Lago glaciar Bâlea", "Curvas de montaña Transfăgărășan", "Ciudad medieval de Sibiu"] },
+                    { name: "Ciudadela Medieval de Sighișoara", wikis: ["Sighișoara", "Castillo de Hunyad", "Iglesias fortificadas de Transilvania"], desc: "Casco histórico amurallado con torres gremiales y casas coloridas declarado Patrimonio UNESCO.", highlights: ["Torre del Reloj", "Castillo de Corvin", "Iglesias fortificadas"] }
+                ]
+            },
+            {
+                id: "bg", isoNumeric: "100", name: "Bulgaria", region: "Central", category: "Cultura e Historia",
+                population: "6,4 millones", language: "Búlgaro", currency: "Lev búlgaro (BGN)", capital: "Sofía",
+                heroWiki: "Catedral de Alejandro Nevski de Sofía",
+                capitalDesc: "Sofía alberga la catedral dorada de Alejandro Nevski, ruinas romanas de Serdica y la montaña Vitosha a las puertas de la ciudad.",
+                description: "Uno de los países más antiguos de Europa, con monasterios ortodoxos escondidos en montañas, rosas aromáticas y playas en el mar Negro.",
+                zones: [
+                    { name: "Monasterio de Rila y Siete Lagos", wikis: ["Monasterio de Rila", "Siete Lagos de Rila", "Bansko"], desc: "Obra maestra del Renacimiento búlgaro con frescos vibrantes en un valle alpino de las montañas Rila.", highlights: ["Monasterio de Rila (UNESCO)", "Los Siete Lagos de Rila", "Torre medieval de Hrelyo"] },
+                    { name: "Plovdiv (Teatro Romano y Ciudad Antigua)", wikis: ["Teatro romano de Plovdiv", "Plovdiv", "Veliko Tarnovo"], desc: "Una de las ciudades habitadas más antiguas del mundo, con su teatro romano intacto y casas señoriales.", highlights: ["Teatro Romano de Plovdiv", "Barrio antiguo de Plovdiv", "Fortaleza de Veliko Tarnovo"] },
+                    { name: "Nessebar y Costa del Mar Negro", wikis: ["Nesebar", "Sozopol", "Balchik"], desc: "Península histórica repleta de iglesias bizantinas junto a extensas playas de arena dorada.", highlights: ["Casco antiguo de Nessebar (UNESCO)", "Sozopol", "Palacio de Balchik"] }
+                ]
+            },
+            {
+                id: "hr", isoNumeric: "191", name: "Croacia", region: "Mediterránea", category: "Costa e Islas",
+                population: "3,9 millones", language: "Croata", currency: "Euro (€)", capital: "Zagreb",
+                heroWiki: "Zagreb",
+                capitalDesc: "Zagreb encanta con su Ciudad Alta medieval, sus fachadas austrohúngaras, mercados al aire libre y cultura de cafés.",
+                description: "Con más de mil islas en el mar Adriático, murallas venecianas y parques naturales de cascadas, Croacia es una joya mediterránea.",
+                zones: [
+                    { name: "Dubrovnik (La Perla del Adriático)", wikis: ["Dubrovnik", "Murallas de Dubrovnik", "Lokrum"], desc: "Ciudad amurallada de piedra blanca frente a aguas azul profundo, famosa en todo el mundo.", highlights: ["Murallas medievales de Dubrovnik", "Calle Stradun", "Isla de Lokrum"] },
+                    { name: "Parque Nacional Lagos de Plitvice", wikis: ["Parque nacional de los Lagos de Plitvice", "Parque nacional Krka", "Rovinj"], desc: "Dieciséis lagos escalonados de color turquesa y esmeralda conectados por decenas de cascadas.", highlights: ["Gran Cascada (Veliki Slap)", "Pasarelas de madera sobre el agua", "Cascadas de Krka"] },
+                    { name: "Split y Palacio de Diocleciano", wikis: ["Palacio de Diocleciano", "Split", "Hvar"], desc: "El monumental Palacio romano de Diocleciano frente al paseo marítimo y las islas soleadas de Dalmacia.", highlights: ["Palacio de Diocleciano", "Paseo marítimo Riva", "Isla de Hvar"] }
+                ]
+            },
+            {
+                id: "si", isoNumeric: "705", name: "Eslovenia", region: "Central", category: "Naturaleza y Montaña",
+                population: "2,1 millones", language: "Esloveno", currency: "Euro (€)", capital: "Liubliana",
+                heroWiki: "Liubliana",
+                capitalDesc: "Liubliana es una de las capitales más verdes de Europa, con el Puente Triple, dragones emblemáticos y un castillo sobre la colina.",
+                description: "Pequeña joya alpina y mediterránea que reúne lagos glaciares, cuevas monumentales y un acogedor litoral adriático.",
+                zones: [
+                    { name: "Lago Bled y Alpes Julianos", wikis: ["Lago Bled", "Castillo de Bled", "Lago Bohinj"], desc: "Lago alpino con una pintoresca isla coronada por una iglesia y vigilado por un castillo medieval en un risco.", highlights: ["Isla de Bled en barca pletna", "Castillo de Bled", "Lago Bohinj"] },
+                    { name: "Castillo de Predjama y Postojna", wikis: ["Castillo de Predjama", "Cuevas de Postojna", "Cuevas de Škocjan"], desc: "Un castillo medieval incrustado en la boca de una cueva monumental junto a galerías subterráneas.", highlights: ["Castillo de Predjama", "Cuevas de Postojna", "Cuevas de Škocjan"] },
+                    { name: "Piran y la Costa Eslovena", wikis: ["Piran", "Portorož", "Koper"], desc: "Arquitectura gótica veneciana en una estrecha península bañada por el mar Adriático.", highlights: ["Plaza Tartini", "Murallas de Piran", "Litoral adriático"] }
+                ]
+            },
+            {
+                id: "ee", isoNumeric: "233", name: "Estonia", region: "Nórdica", category: "Cultura e Historia",
+                population: "1,4 millones", language: "Estonio", currency: "Euro (€)", capital: "Tallin",
+                heroWiki: "Centro histórico de Tallin",
+                capitalDesc: "Tallin posee uno de los cascos medievales amurallados mejor conservados de Europa junto a barrios creativos modernos.",
+                description: "Pionera digital en Europa, Estonia combina historia hanseática, bosques vírgenes, turberas ancestrales e islas bálticas.",
+                zones: [
+                    { name: "Ciudad Vieja de Tallin (Vanalinn)", wikis: ["Centro histórico de Tallin", "Catedral de Alejandro Nevski de Tallin", "Castillo de Toompea"], desc: "Torres defensivas de tejados rojos, calles empedradas y miradores panorámicos sobre el golfo de Finlandia.", highlights: ["Plaza del Ayuntamiento", "Castillo de Toompea", "Catedral Alexander Nevsky"] },
+                    { name: "Parque Nacional Lahemaa y Turbera Viru", wikis: ["Parque nacional de Lahemaa", "Palacio Kadriorg", "Tartu"], desc: "Bosques costeros, pasarelas sobre turberas milenarias y mansiones señoriales históricas.", highlights: ["Parque Nacional Lahemaa", "Palacio Kadriorg", "Ciudad universitaria de Tartu"] },
+                    { name: "Isla de Saaremaa y Castillo Kuressaare", wikis: ["Castillo de Kuressaare", "Saaremaa", "Pärnu"], desc: "La isla más grande de Estonia, conocida por sus molinos de madera y su castillo episcopal medieval.", highlights: ["Castillo de Kuressaare", "Isla de Saaremaa", "Balneario de Pärnu"] }
+                ]
+            },
+            {
+                id: "lv", isoNumeric: "428", name: "Letonia", region: "Nórdica", category: "Gastronomía y Ciudades",
+                population: "1,9 millones", language: "Letón", currency: "Euro (€)", capital: "Riga",
+                heroWiki: "Centro histórico de Riga",
+                capitalDesc: "Riga deslumbra con la mayor colección de edificios Art Nouveau de Europa y su histórico barrio hanseático.",
+                description: "En el centro de los países bálticos, Letonia destaca por sus extensas playas de arena blanca, bosques y castillos medievales.",
+                zones: [
+                    { name: "Parque Nacional de Gauja (Castillo Turaida)", wikis: ["Castillo de Turaida", "Sigulda", "Cēsis"], desc: "Conocido como la 'Suiza de Letonia', con valles boscosos, cuevas de arenisca y fortalezas medievales.", highlights: ["Castillo de Turaida", "Sigulda", "Castillo medieval de Cēsis"] },
+                    { name: "Jūrmala y Costa del Golfo de Riga", wikis: ["Jūrmala", "Casa de los Cabezas Negras", "Catedral de Riga"], desc: "Balneario histórico famoso por sus casas de madera ornamentadas y kilómetros de playas rodeadas de pinos.", highlights: ["Playas y villas de Jūrmala", "Casa de los Cabezas Negras", "Catedral de Riga"] },
+                    { name: "Palacio de Rundāle", wikis: ["Palacio de Rundāle", "Bauska", "Kuldīga"], desc: "Majestuoso palacio barroco diseñado por el arquitecto del Hermitage, rodeado de jardines franceses.", highlights: ["Palacio de Rundāle", "Jardines barrocos", "Cascada Ventas Rumba en Kuldīga"] }
+                ]
+            },
+            {
+                id: "lt", isoNumeric: "440", name: "Lituania", region: "Nórdica", category: "Cultura e Historia",
+                population: "2,9 millones", language: "Lituano", currency: "Euro (€)", capital: "Vilna",
+                heroWiki: "Centro histórico de Vilna",
+                capitalDesc: "Vilna sorprende con su casco histórico barroco Patrimonio UNESCO, la Torre de Gediminas y el barrio artístico de Užupis.",
+                description: "El país más meridional del Báltico cautiva con su castillo insular de Trakai y las dunas de arena del Istmo de Curlandia.",
+                zones: [
+                    { name: "Castillo Insular de Trakai", wikis: ["Castillo de Trakai", "Trakai", "Torre de Gediminas"], desc: "Fortaleza gótica de ladrillo rojo situada en una isla en medio de un lago rodeado de bosques.", highlights: ["Castillo de Trakai", "Lago Galvė", "Torre de Gediminas en Vilna"] },
+                    { name: "Istmo de Curlandia (Neringa)", wikis: ["Istmo de Curlandia", "Nida (Lituania)", "Klaipėda"], desc: "Península de dunas móviles de arena blanca entre la laguna de Curlandia y el mar Báltico.", highlights: ["Dunas de Nida", "Istmo de Curlandia", "Puerto de Klaipėda"] },
+                    { name: "Colina de las Cruces (Šiauliai)", wikis: ["Colina de las Cruces", "Kaunas", "Castillo de Kaunas"], desc: "Uno de los santuarios históricos y culturales más singulares del norte de Europa.", highlights: ["Colina de las Cruces", "Ciudad de Kaunas", "Castillo de Kaunas"] }
+                ]
+            },
+            {
+                id: "mt", isoNumeric: "470", name: "Malta", region: "Mediterránea", category: "Costa e Islas",
+                population: "542 mil", language: "Maltés e Inglés", currency: "Euro (€)", capital: "La Valeta",
+                heroWiki: "La Valeta",
+                capitalDesc: "La Valeta es una ciudad-fortaleza barroca construida por los Caballeros de San Juan, con balcones coloridos y vistas al Gran Puerto.",
+                description: "Archipiélago estratégico en el centro del Mediterráneo con templos megalíticos más antiguos que las pirámides y aguas cristalinas.",
+                zones: [
+                    { name: "La Laguna Azul de Comino y Gozo", wikis: ["Comino", "Gozo", "Victoria (Malta)"], desc: "Aguas de un azul eléctrico transparente entre calas rocosas y los paisajes rurales de la isla vecina de Gozo.", highlights: ["Blue Lagoon en Comino", "Ciudadela de Victoria en Gozo", "Calas de Gozo"] },
+                    { name: "Mdina (La Ciudad Silenciosa)", wikis: ["Mdina", "Rabat (Malta)", "Mosta"], desc: "Antigua capital medieval amurallada de piedra dorada en el centro de la isla, libre de tráfico.", highlights: ["Puerta de Mdina", "Catedral de San Pablo", "Rotonda de Mosta"] },
+                    { name: "Templos Megalíticos y Gruta Azul", wikis: ["Ħaġar Qim", "Marsaxlokk", "Concatedral de San Juan"], desc: "Monumentos prehistóricos Patrimonio UNESCO junto a espectaculares arcos marinos en el sur de Malta.", highlights: ["Templos de Ħaġar Qim", "Pueblo pesquero de Marsaxlokk", "Concatedral de San Juan"] }
+                ]
+            },
+            {
+                id: "cy", isoNumeric: "196", name: "Chipre", region: "Mediterránea", category: "Costa e Islas",
+                population: "1,3 millones", language: "Griego y Turco", currency: "Euro (€)", capital: "Nicosia",
+                heroWiki: "Nicosia",
+                capitalDesc: "Nicosia conserva sus murallas venecianas renacentistas, museos arqueológicos y callejones tradicionales en el corazón de la isla.",
+                description: "La isla mediterránea de Afrodita disfruta de más de 300 días de sol al año, yacimientos grecorromanos y pueblos de montaña.",
+                zones: [
+                    { name: "Pafos y la Roca de Afrodita", wikis: ["Petra tou Romiou", "Pafos", "Tumbas de los Reyes"], desc: "Yacimientos arqueológicos Patrimonio UNESCO con mosaicos romanos frente al lugar mítico del nacimiento de Afrodita.", highlights: ["Petra tou Romiou (Roca de Afrodita)", "Parque Arqueológico de Pafos", "Tumbas de los Reyes"] },
+                    { name: "Cabo Greco y Ayia Napa", wikis: ["Cabo Greco", "Ayia Napa", "Lárnaca"], desc: "Playas de arena blanca, arcos naturales de piedra caliza y cuevas marinas de aguas turquesas.", highlights: ["Parque Nacional Cabo Greco", "Playas de Ayia Napa", "Paseo marítimo de Lárnaca"] },
+                    { name: "Montes Troodos y Pueblos Pintados", wikis: ["Montes Troodos", "Monasterio de Kikkos", "Limasol"], desc: "Aldeas tradicionales de piedra, bodegas de vino Commandaria e iglesias bizantinas pintadas UNESCO.", highlights: ["Montes Troodos", "Monasterio de Kykkos", "Castillo de Limasol"] }
+                ]
+            }
+        ];
+
+        const EU_BY_ISO = {};
+		const EU_FOODS_BY_COUNTRY = {
+            es: [
+                { name: "Paella Valenciana", wiki: "Paella", tag: "Plato Nacional", desc: "Arroz tradicional cocinado en paellera con azafrán, pollo, conejo, judía verde plana (bajoqueta) y garrofón, logrando el apreciado socarrat en su base." },
+                { name: "Tortilla de Patatas con Cebolla", wiki: "Tortilla de patatas", tag: "Clásico de Tapeo", desc: "Cuajada al punto jugoso con patatas confitadas lentamente en aceite de oliva virgen extra, huevos frescos y cebolla caramelizada." },
+                { name: "Gazpacho Andaluz", wiki: "Gazpacho", tag: "Sopa Fría", desc: "Emulsión refrescante de tomate maduro, pepino, pimiento verde, ajo, aceite de oliva y vinagre de Jerez, ideal para los meses cálidos." }
+            ],
+            fr: [
+                { name: "Croissant de Mantequilla", wiki: "Cruasán", tag: "Bollería Artesana", desc: "Masa hojaldrada fermentada elaborada con mantequilla francesa de alta calidad, crujiente por fuera y alveolada por dentro." },
+                { name: "Boeuf Bourguignon", wiki: "Boeuf bourguignon", tag: "Guiso Tradicional", desc: "Estofado de ternera cocinado a fuego lento en vino tinto de Borgoña con zanahorias, cebollitas glaseadas, champiñones y hierbas aromáticas." },
+                { name: "Crème Brûlée", wiki: "Crème brûlée", tag: "Postre Clásico", desc: "Crema pastelera aromatizada con vainilla Bourbon coronada con una fina capa de azúcar caramelizado crujiente." }
+            ],
+            it: [
+                { name: "Pizza Napolitana", wiki: "Pizza napolitana", tag: "Patrimonio UNESCO", desc: "Masa fermentada de bordes esponjosos horneada en leña con tomate San Marzano, mozzarella fior di latte, albahaca fresca y aceite de oliva." },
+                { name: "Pasta alla Carbonara", wiki: "Carbonara", tag: "Receta Romana", desc: "Espaguetis o rigatoni ligados con una emulsión cremosa de yema de huevo, queso Pecorino Romano, pimienta negra y guanciale crujiente." },
+                { name: "Tiramisú", wiki: "Tiramisú", tag: "Repostería Italiana", desc: "Capas de bizcochos savoiardi humedecidos en café espresso intenso intercaladas con crema suave de queso mascarpone y cacao puro." }
+            ],
+            de: [
+                { name: "Bratwurst con Chucrut", wiki: "Bratwurst", tag: "Clásico Alemán", desc: "Salchicha tradicional asada a la parrilla acompañada de col fermentada (Sauerkraut), mostaza dulce o picante y pan recién horneado." },
+                { name: "Brezel (Pretzel Bávaro)", wiki: "Bretzel", tag: "Panadería Tradicional", desc: "Lazo de pan horneado con corteza brillante de sosa alimentaria y cristales de sal gruesa, imprescindible en Baviera." },
+                { name: "Tarta Selva Negra", wiki: "Tarta Selva Negra", tag: "Repostería Alpina", desc: "Bizcocho de chocolate empapado en licor de cerezas (Kirsch), relleno de nata montada y guindas ácidas." }
+            ],
+            pt: [
+                { name: "Pastéis de Nata", wiki: "Pastel de Belém", tag: "Dulce Icónico", desc: "Tartaletas de hojaldre crujiente rellenas de crema tostada de yema y leche, servidas templadas con canela y azúcar glas." },
+                { name: "Bacalhau à Brás", wiki: "Bacalhau à Brás", tag: "Cocina Atlántica", desc: "Bacalao desmigado salteado con cebolla, patatas paja finísimas y huevo revuelto jugoso, decorado con aceitunas negras y perejil." },
+                { name: "Francesinha", wiki: "Francesinha", tag: "Especialidad de Oporto", desc: "Contundente sándwich relleno de carnes asadas y embutidos, cubierto de queso fundido y bañado en salsa caliente ligeramente picante." }
+            ],
+            gr: [
+                { name: "Moussaka", wiki: "Musaca", tag: "Horneado Tradicional", desc: "Capas de berenjena asada, carne picada especiada con canela y tomate, coronadas por una gratinada salsa bechamel." },
+                { name: "Souvlaki", wiki: "Souvlaki", tag: "Comida Callejera", desc: "Brochetas de carne marinada con orégano y limón asadas a la brasa, servidas en pan de pita con salsa tzatziki de yogur y pepino." },
+                { name: "Ensalada Griega (Horiatiki)", wiki: "Ensalada griega", tag: "Dieta Mediterránea", desc: "Tomate maduro, pepino, cebolla roja, aceitunas Kalamata y un bloque generoso de queso feta con orégano y aceite de oliva." }
+            ],
+            nl: [
+                { name: "Stroopwafel", wiki: "Stroopwafel", tag: "Dulce Holandés", desc: "Dos finos barquillos crujientes unidos por un relleno tibio de sirope de caramelo, mantequilla y canela." },
+                { name: "Bitterballen", wiki: "Bitterballen", tag: "Aperitivo Típico", desc: "Croquetas redondas muy crujientes rellenas de un cremoso ragú de ternera, servidas habitualmente con mostaza." },
+                { name: "Haring (Arenque Marinado)", wiki: "Soused herring", tag: "Tradición Costera", desc: "Arenque tierno curado ligeramente en salmuera que se degusta frío acompañado de cebolla picada y pepinillos." }
+            ],
+            be: [
+                { name: "Moules-Frites", wiki: "Moules-frites", tag: "Plato Nacional", desc: "Cazuela de mejillones frescos cocidos al vapor con vino blanco, apio y chalotas, acompañados de patatas fritas belgas de doble fritura." },
+                { name: "Gofre de Bruselas y Lieja", wiki: "Gofre", tag: "Repostería Belga", desc: "Masa dorada y crujiente con alvéolos profundos servida con azúcar perlado caramelizado, chocolate belga o nata." },
+                { name: "Carbonade Flamande", wiki: "Carbonade flamande", tag: "Estofado Flamenco", desc: "Guiso de ternera tierna cocinado lentamente en cerveza oscura de abadía con cebolla caramelizada y pan untado con mostaza." }
+            ],
+            lu: [
+                { name: "Judd mat Gaardebounen", wiki: "Judd mat Gaardebounen", tag: "Plato Nacional", desc: "Cuello de cerdo ahumado y curado servido con una salsa cremosa de habas, hierbas aromáticas y patatas cocidas." },
+                { name: "Gromperekichelcher", wiki: "Gromperekichelcher", tag: "Especialidad de Feria", desc: "Tortitas crujientes de patata rallada con cebolla, chalota y perejil fritas hasta quedar doradas." },
+                { name: "Quetschentaart", wiki: "Quetschentaart", tag: "Postre de Otoño", desc: "Tarta tradicional de masa quebrada rellena de ciruelas damascenas horneadas." }
+            ],
+            at: [
+                { name: "Wiener Schnitzel", wiki: "Wiener Schnitzel", tag: "Clásico Vienés", desc: "Escalope fino de ternera empanado y frito hasta quedar dorado y suflado, servido con rodaja de limón y ensalada de patata." },
+                { name: "Tarta Sacher (Sachertorte)", wiki: "Sachertorte", tag: "Repostería Imperial", desc: "Bizcocho denso de chocolate con una fina capa de mermelada de albaricoque y cobertura brillante de chocolate negro." },
+                { name: "Apfelstrudel", wiki: "Apfelstrudel", tag: "Postre Alpino", desc: "Rollo de masa finísima relleno de manzana especiada con canela, pasas y pan rallado tostado en mantequilla." }
+            ],
+            ie: [
+                { name: "Irish Stew (Estofado Irlandés)", wiki: "Estofado irlandés", tag: "Cocina Tradicional", desc: "Guiso reconfortante de cordero tierno cocinado a fuego lento con patatas, zanahorias, cebolla y caldo aromático." },
+                { name: "Boxty", wiki: "Boxty", tag: "Especialidad Celta", desc: "Tortita tradicional elaborada mezclando patata rallada cruda con puré de patata cocida para lograr una textura tierna y dorada." },
+                { name: "Pan de Soda Irlandés", wiki: "Pan de soda", tag: "Panadería Casera", desc: "Pan rústico sin levadura elaborado con harina integral, suero de leche y bicarbonato, ideal con mantequilla salada." }
+            ],
+            dk: [
+                { name: "Smørrebrød", wiki: "Smørrebrød", tag: "Almuerzo Danés", desc: "Rebanada densa de pan de centeno oscuro untada con mantequilla y coronada con arenque, rosbif, gambas o huevo y eneldo." },
+                { name: "Frikadeller", wiki: "Frikadeller", tag: "Receta Casera", desc: "Albóndigas planas de carne picada doradas en mantequilla, servidas con patatas cocidas y col lombarda agridulce." },
+                { name: "Wienerbrød (Bollería Danesa)", wiki: "Pastel danés", tag: "Repostería Nórdica", desc: "Hojaldre laminado con cardamomo, crema pastelera, mazapán o frutos secos." }
+            ],
+            se: [
+                { name: "Köttbullar (Albóndigas Suecas)", wiki: "Albóndiga", tag: "Clásico Sueco", desc: "Albóndigas servidas con puré de patatas cremoso, salsa de carne, pepinillos encurtidos y mermelada de arándanos rojos." },
+                { name: "Kanelbulle (Rollo de Canela)", wiki: "Rollo de canela", tag: "Tradición Fika", desc: "Bollo tierno aromatizado con cardamomo molido, relleno de mantequilla con canela y decorado con azúcar perlado." },
+                { name: "Gravlax", wiki: "Gravlax", tag: "Especialidad Nórdica", desc: "Lomo de salmón curado en seco con sal, azúcar y eneldo fresco, acompañado de salsa de mostaza dulce." }
+            ],
+            fi: [
+                { name: "Karjalanpiirakka (Pastel de Carelia)", wiki: "Pastel de Carelia", tag: "Patrimonio Culinario", desc: "Corteza fina y crujiente de harina de centeno rellena de arroz cremoso y untada con mantequilla de huevo (munavoi)." },
+                { name: "Lohikeitto (Sopa de Salmón)", wiki: "Lohikeitto", tag: "Cocina Báltica", desc: "Sopa cremosa de salmón fresco, patatas, puerros, caldo de pescado y abundante eneldo." },
+                { name: "Korvapuusti", wiki: "Korvapuusti", tag: "Repostería Finesa", desc: "Bollo trenzado de canela y cardamomo indispensable en la pausa del café finlandesa." }
+            ],
+            pl: [
+                { name: "Pierogi", wiki: "Pierogi", tag: "Plato Nacional", desc: "Empanadillas hervidas y doradas en mantequilla rellenas de patata y queso fresco (Ruskie), carne o col y setas." },
+                { name: "Żurek", wiki: "Żurek", tag: "Sopa Tradicional", desc: "Sopa agria elaborada con masa madre de centeno fermentada, salchicha blanca, huevo duro y mejorana." },
+                { name: "Bigos (Guiso del Cazador)", wiki: "Bigos", tag: "Receta Histórica", desc: "Estofado aromático de chucrut, col fresca, diversas carnes ahumadas, ciruelas pasas y setas del bosque." }
+            ],
+            cz: [
+                { name: "Svíčková na smetaně", wiki: "Svíčková", tag: "Plato Nacional", desc: "Solomillo de ternera asado con una salsa aterciopelada de hortalizas y nata, servido con albóndigas de pan (knedlíky) y arándanos." },
+                { name: "Vepřo knedlo zelo", wiki: "Vepřo knedlo zelo", tag: "Clásico Bohemio", desc: "Asado jugoso de cerdo con comino acompañado de rodajas de knedlíky esponjosos y col guisada." },
+                { name: "Trdelník", wiki: "Trdelník", tag: "Dulce Callejero", desc: "Masa dulce enrollada en un cilindro asado a la brasa y rebozada en azúcar, canela y nueces picadas." }
+            ],
+            sk: [
+                { name: "Bryndzové Halušky", wiki: "Bryndzové halušky", tag: "Plato Nacional", desc: "Pequeños ñoquis de patata mezclados con queso cremoso de oveja bryndza y coronados con dados crujientes de panceta ahumada." },
+                { name: "Kapustnica", wiki: "Kapustnica", tag: "Sopa de Montaña", desc: "Sopa espesa de chucrut, salchicha ahumada, setas secas y pimentón dulce." },
+                { name: "Šúľance con Amapola", wiki: "Šúľance", tag: "Postre Tradicional", desc: "Rollitos dulces de masa de patata bañados en mantequilla derretida, semillas de amapola molidas y azúcar." }
+            ],
+            hu: [
+                { name: "Goulash (Gulyás)", wiki: "Gulash", tag: "Plato Nacional", desc: "Sopa-estofado emblemática de ternera, patatas, cebolla y abundante pimentón dulce húngaro (paprika)." },
+                { name: "Lángos", wiki: "Lángos", tag: "Comida Callejera", desc: "Masa esponjosa frita untada con ajo y cubierta generosamente con crema agria (tejföl) y queso rallado." },
+                { name: "Tarta Dobos", wiki: "Tarta Dobos", tag: "Repostería de Budapest", desc: "Bizcocho fino en capas intercaladas con crema de mantequilla de chocolate y coronado con caramelo duro." }
+            ],
+            ro: [
+                { name: "Sarmale con Mămăligă", wiki: "Sarmale", tag: "Plato Nacional", desc: "Rollitos de hojas de col fermentada rellenos de carne picada, arroz y hierbas, acompañados de polenta caliente y crema agria." },
+                { name: "Mititei (Mici)", wiki: "Mititei", tag: "Parrilla Rumana", desc: "Rollitos de carne sazonada con ajo, tomillo y ajedrea asados a la brasa y servidos con mostaza." },
+                { name: "Papanași", wiki: "Papanași", tag: "Postre Tradicional", desc: "Buñuelos esponjosos de queso fresco fritos y coronados con crema agria y confitura de arándanos o cerezas." }
+            ],
+            bg: [
+                { name: "Ensalada Shopska", wiki: "Ensalada shopska", tag: "Clásico Búlgaro", desc: "Tomate, pepino, pimiento asado y cebolla cubiertos con abundante queso blanco sirene rallado." },
+                { name: "Banitsa", wiki: "Banitsa", tag: "Desayuno Tradicional", desc: "Pastel hojaldrado horneado en espiral relleno de huevo batido y queso sirene, acompañado de yogur búlgaro." },
+                { name: "Tarator", wiki: "Tarator", tag: "Sopa Fría", desc: "Sopa refrescante de yogur búlgaro batido con pepino picado, ajo, nueces, eneldo y aceite de oliva." }
+            ],
+            hr: [
+                { name: "Peka (Pulpo o Cordero)", wiki: "Peka", tag: "Cocina Dálmata", desc: "Asado cocinado lentamente bajo una campana metálica cubierta de brasas con patatas, verduras, vino blanco y aceite de oliva." },
+                { name: "Ćevapi", wiki: "Ćevapi", tag: "Parrilla Balcánica", desc: "Salchichas de carne picada especiada a la brasa servidas dentro de pan plano lepinja con cebolla picada y salsa ajvar." },
+                { name: "Štrukli", wiki: "Zagorski štrukli", tag: "Patrimonio Gastronómico", desc: "Masa estirada a mano rellena de requesón y crema agria, horneada hasta gratinarse." }
+            ],
+            si: [
+                { name: "Potica", wiki: "Potica", tag: "Postre Nacional", desc: "Rollo tradicional de masa fermentada con un relleno en espiral de nueces molidas, miel y especias." },
+                { name: "Kranjska Klobasa", wiki: "Salchicha de Carniola", tag: "Indicación Protegida", desc: "Salchicha ahumada de cerdo con ajo y pimienta negra, servida con mostaza, rábano picante y pan." },
+                { name: "Kremšnita de Bled", wiki: "Cremeschnitte", tag: "Dulce Alpino", desc: "Pastel de hojaldre crujiente con doble capa gruesa de crema de vainilla y nata montada." }
+            ],
+            ee: [
+                { name: "Kama con Kéfir", wiki: "Kama (comida)", tag: "Tradición Estonia", desc: "Mezcla tostada de harinas de centeno, cebada, avena y guisante batida con kéfir o suero de leche y bayas del bosque." },
+                { name: "Sándwich de Espadín (Kiluvõileib)", wiki: "Kiluvõileib", tag: "Clásico Báltico", desc: "Rebanada de pan negro de centeno con mantequilla, filetes de espadín especiado del Báltico, huevo duro y cebollino." },
+                { name: "Verivorst", wiki: "Verivorst", tag: "Receta Invernal", desc: "Morcilla tradicional de cebada y mejorana horneada hasta quedar crujiente y servida con salsa de arándanos rojos." }
+            ],
+            lv: [
+                { name: "Guisantes Grises con Tocino", wiki: "Pelēkie zirņi ar speķi", tag: "Plato Nacional", desc: "Guisantes grises autóctonos cocidos y salteados con dados de panceta ahumada y cebolla dorada." },
+                { name: "Sklandrausis", wiki: "Sklandrausis", tag: "Especialidad Tradicional", desc: "Tartaleta rústica de masa de centeno rellena de capas dulces de puré de patata y zanahoria con comino." },
+                { name: "Rupjmaize (Pan Negro de Centeno)", wiki: "Pan de centeno", tag: "Panadería Letona", desc: "Pan oscuro aromático elaborado con malta y semillas de alcaravea en horno de leña." }
+            ],
+            lt: [
+                { name: "Cepelinai", wiki: "Cepelinai", tag: "Plato Nacional", desc: "Grandes albóndigas ovaladas de masa de patata rallada rellenas de carne picada y servidas con crema agria y chicharrones." },
+                { name: "Šaltibarščiai (Sopa Fría Rosa)", wiki: "Šaltibarščiai", tag: "Clásico de Verano", desc: "Sopa fría de remolacha cocida y kéfir de color rosa vibrante con pepino, eneldo y huevo duro, acompañada de patatas calientes." },
+                { name: "Šakotis", wiki: "Šakotis", tag: "Pastel Ceremonial", desc: "Pastel tradicional horneado en asador giratorio que forma características ramas crujientes doradas." }
+            ],
+            mt: [
+                { name: "Pastizzi", wiki: "Pastizzi", tag: "Bocado Icónico", desc: "Empanadillas de hojaldre muy crujiente rellenas tradicionalmente de queso ricotta suave o pasta de guisantes especiados." },
+                { name: "Stuffat tal-Fenek", wiki: "Guiso de conejo", tag: "Plato Nacional", desc: "Estofado tradicional maltés de conejo marinado en vino tinto, ajo, laurel, tomate y guisantes." },
+                { name: "Ftira Maltesa", wiki: "Ftira", tag: "Patrimonio UNESCO", desc: "Pan circular tradicional con corteza crujiente relleno de atún, alcaparras, aceitunas, tomate y aceite de oliva." }
+            ],
+            cy: [
+                { name: "Queso Halloumi a la Plancha", wiki: "Halloumi", tag: "Producto Estrella", desc: "Queso semiduro de leche de oveja y cabra con menta que no se derrite al asarse, logrando un exterior dorado y crujiente." },
+                { name: "Souvla", wiki: "Souvla", tag: "Barbacoa Chipriota", desc: "Trozos grandes de carne marinada con orégano y vino asados lentamente al carbón en espetón." },
+                { name: "Loukoumades", wiki: "Lokma", tag: "Dulce Mediterráneo", desc: "Buñuelos dorados y esponjosos bañados en sirope de miel chipriota, canela y nueces picadas." }
+            ]
+        };
+		const EU_TRADITIONS_BY_COUNTRY = {
+            es: [
+                { name: "El Flamenco", tag: "Patrimonio UNESCO", wiki: "Flamenco", desc: "Expresión artística andaluza que fusiona cante, toque de guitarra y baile apasionado con palmas y taconeo." },
+                { name: "La Tomatina y Las Fallas", tag: "Fiesta Popular", wiki: "Fallas de Valencia", desc: "Celebraciones emblemáticas del Levante español donde el arte efímero, la pólvora y la participación vecinal llenan las calles." }
+            ],
+            fr: [
+                { name: "El Cancán Francés", tag: "Danza Histórica", wiki: "Cancán", desc: "Baile enérgico de music-hall nacido en el París del siglo XIX, famoso por sus acrobacias y faldas volantes en Montmartre." },
+                { name: "Fiesta de la Música (Fête de la Musique)", tag: "Tradición Cultural", wiki: "Fiesta de la Música", desc: "Celebrada cada 21 de junio en toda Francia con conciertos gratuitos al aire libre en plazas y calles." }
+            ],
+            it: [
+                { name: "La Tarantella", tag: "Danza Folclórica", wiki: "Tarantela", desc: "Baile tradicional del sur de Italia de ritmo acelerado acompañado de panderetas, mandolinas y acordeón." },
+                { name: "Carnaval de Venecia", tag: "Tradición Secular", wiki: "Carnaval de Venecia", desc: "Desfile histórico de máscaras artesanales y trajes de época del siglo XVII en los canales y la Plaza de San Marcos." }
+            ],
+            de: [
+                { name: "El Schuhplattler Bávaro", tag: "Danza Alpina", wiki: "Schuhplattler", desc: "Baile folclórico de Baviera y el Tirol en el que los bailarines golpean ritmicamente las suelas de sus zapatos y los muslos." },
+                { name: "Mercados Navideños (Christkindlmarkt)", tag: "Tradición Invernal", wiki: "Mercado de Navidad", desc: "Plazas históricas iluminadas con puestos de artesanía, galletas de jengibre y vino caliente especiado (Glühwein)." }
+            ],
+            pt: [
+                { name: "El Fado y la Guitarra Portuguesa", tag: "Patrimonio UNESCO", wiki: "Fado", desc: "Canto tradicional nacido en los barrios lisboetas de Alfama y Mouraria que expresa la 'saudade' y el alma atlántica." },
+                { name: "El Vira del Miño", tag: "Baile Regional", wiki: "Vira (danza)", desc: "Danza alegre en pareja del norte de Portugal en la que los bailarines giran sin tocarse al son de concertinas." }
+            ],
+            gr: [
+                { name: "El Sirtaki y el Hasapiko", tag: "Danza Tradicional", wiki: "Sirtaki", desc: "Baile colectivo en fila o círculo con los brazos sobre los hombros que comienza lento y acelera al ritmo del buzuki." },
+                { name: "Pascua Ortodoxa Griega", tag: "Celebración Mayor", wiki: "Pascua ortodoxa", desc: "Procesiones nocturnas con velas encendidas, fuegos artificiales y banquetes familiares en todo el país." }
+            ],
+            nl: [
+                { name: "El Klompendans (Baile de Zuecos)", tag: "Folclore Holandés", wiki: "Zueco", desc: "Danza tradicional rural ejecutada con los icónicos zuecos de madera tallada sobre suelos de madera." },
+                { name: "Koningsdag (Día del Rey)", tag: "Fiesta Nacional", wiki: "Día del Rey (Países Bajos)", desc: "Cada 27 de abril el país entero se viste de naranja con mercadillos callejeros y fiestas en los canales." }
+            ],
+            be: [
+                { name: "Carnaval de Binche y los Gilles", tag: "Patrimonio UNESCO", wiki: "Carnaval de Binche", desc: "Los 'Gilles' desfilan con sombreros de plumas de avestruz y zuecos lanzando naranjas a la multitud como símbolo de buena suerte." },
+                { name: "Alfombra de Flores de Bruselas", tag: "Tradición Bienal", wiki: "Grand-Place de Bruselas", desc: "Tapiz monumental elaborado con cientos de miles de begonias frescas en el centro de la Grand-Place." }
+            ],
+            lu: [
+                { name: "Procesión Danzante de Echternach", tag: "Patrimonio UNESCO", wiki: "Procesión danzante de Echternach", desc: "Peregrinación secular en la que miles de participantes avanzan saltando lateralmente al compás de una polca tradicional." },
+                { name: "Schueberfouer", tag: "Feria Histórica", wiki: "Schueberfouer", desc: "Feria popular fundada en 1340 por Juan el Ciego que combina gastronomía tradicional y atracciones cada verano." }
+            ],
+            at: [
+                { name: "El Vals Vienés", tag: "Danza Imperial", wiki: "Vals vienés", desc: "Baile de salón elegante en compás de tres por cuatro inmortalizado por Johann Strauss en los bailes de gala de Viena." },
+                { name: "Desfile de los Krampus", tag: "Tradición Alpina", wiki: "Krampus", desc: "Comparsas invernales con máscaras talladas a mano y cencerros que recorren los pueblos alpinos en diciembre." }
+            ],
+            ie: [
+                { name: "Danza Irlandesa (Stepdance)", tag: "Folclore Celta", wiki: "Danza irlandesa", desc: "Baile caracterizado por el rápido juego de pies y taconeo rítmico manteniendo el torso erguido al son del violín y el bodhrán." },
+                { name: "Día de San Patricio", tag: "Fiesta Nacional", wiki: "Día de San Patricio", desc: "Desfiles festivos, música tradicional en pubs y celebraciones culturales en torno al trébol y el color verde." }
+            ],
+            dk: [
+                { name: "El Les Lanciers", tag: "Danza de Gala", wiki: "Les Lanciers", desc: "Baile tradicional de cuadrilla en cinco figuras muy popular en celebraciones reales, bodas y graduaciones danesas." },
+                { name: "Sankt Hans Aften (Noche de San Juan)", tag: "Tradición Estival", wiki: "Noche de San Juan", desc: "Hogueras encendidas en playas y costas cada 23 de junio acompañadas de canciones tradicionales junto al mar." }
+            ],
+            se: [
+                { name: "El Polska y Små Grodorna", tag: "Baile Tradicional", wiki: "Polska (danza)", desc: "Danzas circulares alrededor del mayo floral donde familias enteras cantan y bailan al aire libre." },
+                { name: "Midsommar (Solsticio de Verano)", tag: "Fiesta Emblemática", wiki: "Midsommar", desc: "Celebración con coronas de flores silvestres, arenque marinado y bailes alrededor del poste adornado (Midsommarstång)." }
+            ],
+            fi: [
+                { name: "La Jenkka y el Tango Finlandés", tag: "Danza Popular", wiki: "Tango finlandés", desc: "Bailes veraniegos en pistas de madera junto a los lagos ('lavatanssit') con melodías melancólicas y alegres." },
+                { name: "Cultura de la Sauna Finlandesa", tag: "Patrimonio UNESCO", wiki: "Sauna", desc: "Ritual social y familiar milenario de vapor de madera seguido de un baño refrescante en un lago o en la nieve." }
+            ],
+            pl: [
+                { name: "La Polonesa y la Mazurca", tag: "Danzas Nacionales", wiki: "Polonesa", desc: "Danzas nobles y folclóricas en compás ternario que inspiraron las composiciones universales de Frédéric Chopin." },
+                { name: "Wianki (Noche de las Guirnaldas)", tag: "Tradición Eslava", wiki: "Noche de Iván Kupala", desc: "Lanzamiento de coronas de flores iluminadas con velas sobre el río Vístula en Cracovia y Varsovia durante el solsticio." }
+            ],
+            cz: [
+                { name: "La Polka Bohemia", tag: "Danza Originaria", wiki: "Polca", desc: "Baile vivo en pareja nacido en Bohemia en el siglo XIX que conquistó los salones de toda Europa." },
+                { name: "Cabalgata de los Reyes (Jízda králů)", tag: "Patrimonio UNESCO", wiki: "Cabalgata de los Reyes", desc: "Desfile primaveral en Moravia con jinetes ataviados con trajes bordados tradicionales y caballos engalanados." }
+            ],
+            sk: [
+                { name: "El Odziemok", tag: "Danza de Pastores", wiki: "Odziemok", desc: "Baile acrobático masculino de los Cárpatos ejecutado con un hacha tradicional de pastor (valaška)." },
+                { name: "Tradición de Pascua (Šibačka y Oblievačka)", tag: "Folclore Eslovaco", desc: "Costumbre primaveral con trenzas de sauce decoradas con cintas y agua fresca como símbolo de salud y renovación.", wiki: "Pascua" }
+            ],
+            hu: [
+                { name: "Las Csárdás", tag: "Danza Nacional", wiki: "Csárdás", desc: "Baile tradicional húngaro que alterna una introducción lenta y dramática (lassú) con un giro vertiginoso (friss)." },
+                { name: "Busójárás de Mohács", tag: "Patrimonio UNESCO", wiki: "Busójárás", desc: "Carnaval ancestral donde participantes con máscaras de madera con cuernos y pieles de oveja despiden al invierno." }
+            ],
+            ro: [
+                { name: "La Hora y el Căluș", tag: "Patrimonio UNESCO", wiki: "Hora (danza)", desc: "Danza circular comunitaria de manos enlazadas y ritual acrobático primaveral con bastones y cascabeles." },
+                { name: "Mărțișor", tag: "Tradición Primaveral", wiki: "Mărțișor", desc: "Cada 1 de marzo se regala un amuleto trenzado con hilos blanco y rojo para dar la bienvenida a la primavera." }
+            ],
+            bg: [
+                { name: "El Horo Búlgaro", tag: "Danza Folclórica", wiki: "Horo", desc: "Baile en círculo o cadena abierta con pasos complejos y rítmicos acompañados de gaitas (gaida) y tambores." },
+                { name: "Festival de las Rosas de Kazanlak", tag: "Tradición Secular", wiki: "Valle de las Rosas (Bulgaria)", desc: "Recolección festiva de la rosa damascena en junio con desfiles de trajes bordados y coronación de la Reina de la Rosa." }
+            ],
+            hr: [
+                { name: "El Linđo y el Kolo", tag: "Danza Dálmata", wiki: "Kolo (danza)", desc: "Baile circular tradicional de Dubrovnik acompañado por el sonido de la lijerica, un instrumento de cuerda histórico." },
+                { name: "Sinjska Alka", tag: "Patrimonio UNESCO", wiki: "Sinjska alka", desc: "Torneo ecuestre celebrado desde 1715 en Sinj donde los jinetes al galope ensartan una anilla metálica con su lanza." }
+            ],
+            si: [
+                { name: "La Polka Eslovena (Oberkrainer)", tag: "Música Alpina", wiki: "Oberkrainer", desc: "Baile festivo animado por el acordeón diatónico popularizado mundialmente por Slavko Avsenik." },
+                { name: "Kurentovanje de Ptuj", tag: "Patrimonio UNESCO", wiki: "Kurentovanje", desc: "Carnaval tradicional donde los 'Kurenti' vestidos con pieles y grandes cencerros ahuyentan el invierno." }
+            ],
+            ee: [
+                { name: "El Kaerajaan", tag: "Danza Folclórica", wiki: "Kaerajaan", desc: "Baile tradicional estonio lleno de saltos alegres y palmas originario de la región de Tartu." },
+                { name: "Festival de la Canción y la Danza (Laulupidu)", tag: "Patrimonio UNESCO", wiki: "Festival de la Canción de Estonia", desc: "Encuentro monumental cada cinco años en Tallin donde más de 30.000 cantantes y bailarines actúan al unísono." }
+            ],
+            lv: [
+                { name: "Danzas Folclóricas Letonas", tag: "Patrimonio UNESCO", wiki: "Festival de la Canción y la Danza de Letonia", desc: "Coreografías geométricas ejecutadas con trajes regionales tejidos a mano en el gran festival nacional de Riga." },
+                { name: "Jāņi (Solsticio de Verano)", tag: "Fiesta Ancestral", wiki: "Jāņi", desc: "Noche mágica del 23 de junio con coronas de hojas de roble y flores, hogueras y cantos tradicionales (dainas)." }
+            ],
+            lt: [
+                { name: "Las Sutartinės (Cantos Polifónicos)", tag: "Patrimonio UNESCO", wiki: "Sutartinės", desc: "Cantos tradicionales acompañados de danzas circulares suaves e instrumentos de madera como las trompetas ragai." },
+                { name: "Užgavėnės", tag: "Carnaval Tradicional", wiki: "Užgavėnės", desc: "Fiesta de despedida del invierno con máscaras grotescas, tortitas (blynai) y una batalla simbólica entre el invierno y la primavera." }
+            ],
+            mt: [
+                { name: "La Maltija", tag: "Danza Nacional", wiki: "Malta", desc: "Baile tradicional cortesano y folclórico originado en tiempos de los Caballeros de San Juan con trajes de época." },
+                { name: "Las Festas de Verano", tag: "Tradición Isleña", wiki: "La Valeta", desc: "Cada pueblo engalana sus calles con estandartes, bandas de música y espectaculares fuegos artificiales en honor a su patrón." }
+            ],
+            cy: [
+                { name: "El Zeibekiko y el Sousta", tag: "Danza Chipriota", wiki: "Nicosia", desc: "Bailes tradicionales en pareja y en grupo acompañados de violín chipriota y laúd (laouto) en bodas y fiestas." },
+                { name: "Kataklysmos (Fiesta del Diluvio)", tag: "Tradición Costera", wiki: "Lárnaca", desc: "Celebración marítima junto al paseo de Lárnaca con juegos acuáticos, poesía improvisada (tsiattista) y música." }
+            ]
+        };
+        EU_COUNTRIES.forEach(c => { EU_BY_ISO[c.isoNumeric] = c; });
+
+        // Escenas del Hero estilo Vídeo Promocional (con consultas reales de Wikipedia)
+        const HERO_REEL_SCENES = [
+            { wiki: "Castillo de Neuschwanstein", fallback: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=1920&q=80", loc: "Castillos de Baviera, Alemania", caption: "Explora el mapa interactivo de los 27 países de la Unión Europea, conoce sus capitales y deja que nuestra ruleta turística elija una zona popular inolvidable para ti." },
+            { wiki: "Santorini", fallback: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=1920&q=80", loc: "Islas Cícladas, Grecia", caption: "Desde los pueblos blancos bañados por el mar Egeo hasta las capitales imperiales de Europa Central: un continente entero al alcance de un clic." },
+            { wiki: "Coliseo", fallback: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1920&q=80", loc: "Foro Romano y Coliseo, Italia", caption: "Sumérgete en miles de años de historia, arte renacentista y patrimonio mundial en las 27 capitales de la Unión Europea." },
+            { wiki: "Laponia finlandesa", fallback: "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=1920&q=80", loc: "Laponia Ártica, Finlandia", caption: "Contempla auroras boreales sobre bosques nevados y miles de lagos cristalinos en el extremo norte de la Unión Europea." }
+        ];
+
+        // Estado global
+        let currentView = 'home';
+        let previousView = 'home';
+        let selectedCatalogCategory = 'all';
+        let selectedMapGridRegion = 'all';
+        let activeDetailCountry = null;
+
+        let heroSceneIdx = 0;
+        let heroPlaying = true;
+        let heroAudioOn = false;
+        let heroInterval = null;
+
+        let d3Svg = null;
+        let d3Zoom = null;
+        let d3MapInitialized = false;
+
+        // =========================================================================
+        // INICIALIZACIÓN
+        // =========================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+			initTheme();
+            renderNavbarDropdown();
+            renderHomeFeatured();
+            renderMapBottomGrid();
+            renderCatalogCards();
+            startHeroReel();
+
+            document.addEventListener('click', (e) => {
+                const navSearch = document.getElementById('navbar-search-results');
+                const navInput = document.getElementById('navbar-search-input');
+                if (navSearch && navInput && !navSearch.contains(e.target) && e.target !== navInput) {
+                    navSearch.classList.add('hidden');
+                }
+                const wrapper = document.getElementById('what-dropdown-wrapper');
+                const menu = document.getElementById('what-dropdown-menu');
+                if (wrapper && menu && !wrapper.contains(e.target)) {
+                    menu.classList.add('hidden');
+                }
+            });
+        });
+
+        // =========================================================================
+        // CONTROLES DEL HERO
+        // =========================================================================
+        function startHeroReel() {
+            if (heroInterval) clearInterval(heroInterval);
+            heroInterval = setInterval(() => {
+                if (heroPlaying) nextHeroSlide();
+            }, 6500);
+        }
+
+        async function nextHeroSlide() {
+            heroSceneIdx = (heroSceneIdx + 1) % HERO_REEL_SCENES.length;
+            const scene = HERO_REEL_SCENES[heroSceneIdx];
+            const img = document.getElementById('hero-reel-img');
+            const loc = document.getElementById('hero-reel-location');
+            const cap = document.getElementById('hero-reel-caption');
+            if (loc) loc.textContent = scene.loc;
+            if (cap) cap.textContent = scene.caption;
+            if (img) {
+                const realSrc = await fetchWikiLeadImage(scene.wiki, scene.fallback);
+                img.src = realSrc;
+            }
+        }
+
+        function toggleHeroVideoPlay() {
+            heroPlaying = !heroPlaying;
+            const img = document.getElementById('hero-reel-img');
+            const icon = document.getElementById('hero-play-icon');
+            const badge = document.getElementById('hero-reel-badge');
+            if (heroPlaying) {
+                img?.classList.remove('hero-video-paused');
+                if (icon) icon.className = 'fa-solid fa-pause';
+                if (badge) badge.textContent = 'Presentación Visual UE • En reproducción';
+            } else {
+                img?.classList.add('hero-video-paused');
+                if (icon) icon.className = 'fa-solid fa-play';
+                if (badge) badge.textContent = 'Presentación Visual UE • En pausa';
+            }
+        }
+
+        function toggleHeroAudio() {
+            heroAudioOn = !heroAudioOn;
+            const icon = document.getElementById('hero-audio-icon');
+            if (icon) {
+                icon.className = heroAudioOn ? 'fa-solid fa-volume-high text-euGold' : 'fa-solid fa-volume-xmark';
+            }
+        }
+
+        // =========================================================================
+        // NAVEGACIÓN SPA
+        // =========================================================================
+        function navigateTo(view, countryId = null) {
+            if (currentView !== view) {
+                previousView = currentView;
+            }
+            currentView = view;
+
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+            const target = document.getElementById(`view-${view}`);
+            if (target) target.classList.add('active');
+
+            document.querySelectorAll('.nav-link').forEach(btn => {
+                btn.classList.remove('text-euBlue', 'bg-blue-50');
+                btn.classList.add('text-slate-700');
+            });
+            const activeBtn = document.getElementById(`nav-${view}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-700');
+                activeBtn.classList.add('text-euBlue', 'bg-blue-50');
+            }
+
+            hideMapTooltip();
+
+            if (view === 'where' && !d3MapInitialized) {
+                initRealCartographicMap();
+            }
+
+            if (view === 'detail' && countryId) {
+                loadCountryDetail(countryId);
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleWhatDropdown(e) {
+            if (e) e.stopPropagation();
+            const menu = document.getElementById('what-dropdown-menu');
+            if (!menu) return;
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+            } else {
+                openCatalogWithCategory('all');
+                menu.classList.add('hidden');
+            }
+        }
+
+        function closeWhatDropdown() {
+            const menu = document.getElementById('what-dropdown-menu');
+            if (menu) menu.classList.add('hidden');
+        }
+
+        function toggleMobileDrawer() {
+            const drawer = document.getElementById('mobile-drawer');
+            const icon = document.getElementById('mobile-drawer-icon');
+            const isHidden = drawer.classList.contains('hidden');
+            drawer.classList.toggle('hidden');
+            icon.className = isHidden ? 'fa-solid fa-xmark text-xl' : 'fa-solid fa-bars text-xl';
+        }
+
+        // =========================================================================
+        // NAVBAR DESPLEGABLE Y BÚSQUEDA
+        // =========================================================================
+        function renderNavbarDropdown() {
+            const container = document.getElementById('navbar-featured-destinations');
+            if (!container) return;
+
+            const featuredIds = ['es', 'fr', 'it', 'de', 'gr', 'pt', 'nl', 'at', 'se', 'hr', 'pl', 'ie'];
+            const sample = featuredIds.map(id => EU_COUNTRIES.find(c => c.id === id)).filter(Boolean);
+
+            container.innerHTML = sample.map(c => `
+                <button onclick="navigateTo('detail', '${c.id}'); closeWhatDropdown();" class="w-full text-left px-3 py-2 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
+                    <div class="flex items-center space-x-2.5">
+                        <img src="${getFlagUrl(c.id, 40)}" alt="${c.name}" class="w-6 h-4 object-cover rounded-sm shadow-sm">
+                        <div>
+                            <span class="text-xs font-bold text-slate-800 group-hover:text-euBlue block">${c.name}</span>
+                            <span class="text-[11px] text-slate-500">Capital: ${c.capital}</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-slate-400 group-hover:text-euBlue"></i>
+                </button>
+            `).join('');
+        }
+
+        function handleNavbarSearch(query) {
+            const resultsBox = document.getElementById('navbar-search-results');
+            const term = query.trim().toLowerCase();
+            if (!term) {
+                resultsBox.classList.add('hidden');
+                return;
+            }
+
+            const matches = EU_COUNTRIES.filter(c =>
+                c.name.toLowerCase().includes(term) ||
+                c.capital.toLowerCase().includes(term) ||
+                c.zones.some(z => z.name.toLowerCase().includes(term))
+            );
+
+            resultsBox.classList.remove('hidden');
+            if (matches.length === 0) {
+                resultsBox.innerHTML = `<div class="p-3 text-xs text-slate-500 text-center">Sin resultados para "${query}"</div>`;
+                return;
+            }
+
+            resultsBox.innerHTML = matches.map(c => `
+                <button onclick="navigateTo('detail', '${c.id}'); document.getElementById('navbar-search-results').classList.add('hidden'); document.getElementById('navbar-search-input').value='';"
+                        class="w-full text-left p-2.5 rounded-xl hover:bg-blue-50 flex items-center justify-between transition-colors cursor-pointer">
+                    <div class="flex items-center space-x-2.5">
+                        <img src="${getFlagUrl(c.id, 40)}" alt="${c.name}" class="w-6 h-4 object-cover rounded-sm shadow-sm">
+                        <div>
+                            <div class="text-xs font-bold text-slate-900">${c.name}</div>
+                            <div class="text-[11px] text-slate-500">Capital: ${c.capital}</div>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-bold text-euBlue bg-blue-100/70 px-2 py-0.5 rounded-full">Ver guía</span>
+                </button>
+            `).join('');
+        }
+
+        function handleMobileSearch(query) {
+            const box = document.getElementById('mobile-search-results');
+            const term = query.trim().toLowerCase();
+            if (!term) {
+                box.classList.add('hidden');
+                return;
+            }
+            const matches = EU_COUNTRIES.filter(c =>
+                c.name.toLowerCase().includes(term) || c.capital.toLowerCase().includes(term)
+            );
+            box.classList.remove('hidden');
+            if (matches.length === 0) {
+                box.innerHTML = `<p class="text-xs text-slate-500 p-2">Sin resultados</p>`;
+                return;
+            }
+            box.innerHTML = matches.map(c => `
+                <button onclick="navigateTo('detail', '${c.id}'); toggleMobileDrawer();" class="w-full text-left p-2 rounded-lg hover:bg-white text-xs font-semibold flex items-center justify-between">
+                    <span class="flex items-center space-x-2">
+                        <img src="${getFlagUrl(c.id, 40)}" alt="${c.name}" class="w-5 h-3.5 object-cover rounded-sm">
+                        <span>${c.name} (${c.capital})</span>
+                    </span>
+                    <i class="fa-solid fa-arrow-right text-euBlue"></i>
+                </button>
+            `).join('');
+        }
+
+        // =========================================================================
+        // VISTA INICIAL — TARJETAS DE ACCESO RÁPIDO CON FOTOS REALES
+        // =========================================================================
+        async function renderHomeFeatured() {
+            const grid = document.getElementById('home-featured-cards');
+            if (!grid) return;
+
+            const shuffled = [...EU_COUNTRIES].sort(() => 0.5 - Math.random()).slice(0, 3);
+
+            grid.innerHTML = shuffled.map(country => {
+                const randomZone = country.zones[Math.floor(Math.random() * country.zones.length)];
+                const cardImgId = `home-card-img-${country.id}`;
+                // Cargar foto real de la zona de forma asíncrona
+                fetchZonePhotos(randomZone.wikis, getFlagUrl(country.id, 640)).then(urls => {
+                    const imgEl = document.getElementById(cardImgId);
+                    if (imgEl && urls[0]) imgEl.src = urls[0];
+                });
+
+                return `
+                    <div onclick="navigateTo('detail', '${country.id}')" class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group flex flex-col">
+                        <div class="relative h-52 overflow-hidden bg-slate-900">
+                            <img id="${cardImgId}" src="${getFlagUrl(country.id, 640)}"
+                                 alt="${randomZone.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            <div class="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-xs font-extrabold text-slate-900 shadow flex items-center space-x-2">
+                                <img src="${getFlagUrl(country.id, 40)}" alt="${country.name}" class="w-4 h-3 object-cover rounded-xs">
+                                <span>${country.name}</span>
+                            </div>
+                            <div class="absolute bottom-3 right-3 bg-slate-950/80 backdrop-blur-md text-euGold text-[11px] font-bold px-2.5 py-1 rounded-lg">
+                                Capital: ${country.capital}
+                            </div>
+                        </div>
+                        <div class="p-6 flex flex-col flex-grow justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-600 flex items-center">
+                                    <i class="fa-solid fa-sparkles mr-1"></i> Zona recomendada
+                                </span>
+                                <h3 class="font-display text-lg font-extrabold text-slate-900 mt-1 mb-2 group-hover:text-euBlue transition-colors">${randomZone.name}</h3>
+                                <p class="text-slate-600 text-sm line-clamp-2 leading-relaxed">${randomZone.desc}</p>
+                            </div>
+                            <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-euBlue">
+                                <span>Abrir guía completa</span>
+                                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // =========================================================================
+        // 3. MAPA INTERACTIVO REAL DE LA UE
+        // =========================================================================
+        function fetchWithTimeout(url, ms = 4500) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), ms);
+            return fetch(url, { signal: controller.signal })
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    return res.json();
+                })
+                .finally(() => clearTimeout(timer));
+        }
+
+        function getFallbackEuropeGeoJSON() {
+            const coordsById = {
+                "724": [[[-9.3,36.0],[-9.2,43.4],[-1.8,43.4],[3.3,42.4],[-0.7,37.6],[-5.6,36.0],[-9.3,36.0]]],
+                "620": [[[-9.5,37.0],[-9.4,42.1],[-6.2,41.9],[-7.4,37.1],[-9.5,37.0]]],
+                "250": [[[-4.8,48.4],[2.5,51.1],[8.2,49.0],[7.5,43.7],[3.1,42.5],[-1.8,43.4],[-4.8,48.4]]],
+                "380": [[[7.0,45.8],[13.7,46.5],[18.5,40.1],[15.6,38.0],[12.3,41.8],[8.5,44.4],[7.0,45.8]]],
+                "276": [[[6.0,53.5],[14.2,54.0],[14.8,51.0],[13.0,47.6],[7.6,47.6],[6.0,51.0],[6.0,53.5]]],
+                "056": [[[2.6,51.1],[6.1,50.8],[5.8,49.5],[3.2,50.3],[2.6,51.1]]],
+                "528": [[[3.4,51.4],[7.1,53.4],[6.7,51.8],[4.2,51.4],[3.4,51.4]]],
+                "442": [[[5.7,50.1],[6.5,50.1],[6.4,49.5],[5.8,49.5],[5.7,50.1]]],
+                "040": [[[9.6,47.5],[17.0,48.8],[16.8,46.8],[12.2,46.7],[9.6,47.5]]],
+                "372": [[[-10.4,51.5],[-9.8,55.2],[-6.0,54.2],[-6.2,52.2],[-10.4,51.5]]],
+                "208": [[[8.1,55.0],[10.6,57.7],[12.6,55.7],[9.5,54.8],[8.1,55.0]]],
+                "752": [[[11.2,58.5],[20.5,68.8],[24.1,65.8],[18.5,59.3],[13.0,55.4],[11.2,58.5]]],
+                "246": [[[21.0,60.4],[28.5,69.8],[31.2,62.8],[27.5,60.5],[21.0,60.4]]],
+                "616": [[[14.2,53.9],[23.8,54.3],[23.9,49.2],[14.9,50.9],[14.2,53.9]]],
+                "203": [[[12.2,50.3],[18.8,50.0],[16.9,48.8],[13.6,48.8],[12.2,50.3]]],
+                "703": [[[17.0,48.8],[22.5,49.1],[22.1,48.4],[17.2,47.8],[17.0,48.8]]],
+                "348": [[[16.2,47.8],[22.8,48.2],[20.8,46.0],[16.5,46.4],[16.2,47.8]]],
+                "642": [[[20.5,46.1],[28.2,48.2],[29.5,45.0],[22.6,44.2],[20.5,46.1]]],
+                "100": [[[22.4,44.1],[28.5,43.7],[27.8,41.9],[22.5,41.4],[22.4,44.1]]],
+                "300": [[[19.6,39.8],[26.2,41.6],[24.0,37.8],[22.4,36.5],[19.6,39.8]]],
+                "191": [[[13.6,45.5],[19.2,45.9],[18.2,42.6],[14.5,44.8],[13.6,45.5]]],
+                "705": [[[13.6,46.5],[16.5,46.8],[15.5,45.5],[13.7,45.5],[13.6,46.5]]],
+                "233": [[[23.5,59.4],[28.1,59.4],[27.6,57.6],[24.3,57.9],[23.5,59.4]]],
+                "428": [[[21.0,57.6],[28.1,57.5],[27.5,55.8],[21.1,56.1],[21.0,57.6]]],
+                "440": [[[21.1,56.1],[26.7,55.7],[25.5,53.9],[22.8,54.4],[21.1,56.1]]],
+                "470": [[[14.2,36.0],[14.6,36.0],[14.6,35.8],[14.2,35.8],[14.2,36.0]]],
+                "196": [[[32.3,35.1],[34.6,35.6],[34.0,34.9],[32.4,34.7],[32.3,35.1]]]
+            };
+            return Object.entries(coordsById).map(([iso, coordinates]) => ({
+                type: "Feature",
+                id: iso,
+                geometry: { type: "Polygon", coordinates }
+            }));
+        }
+
+        async function initRealCartographicMap() {
+            const container = document.getElementById('d3-eu-map-container');
+            const loadingEl = document.getElementById('map-loading-state');
+            const badgeEl = document.getElementById('map-source-badge');
+            if (!container) return;
+
+            d3MapInitialized = true;
+
+            let countriesFeatures = null;
+
+            try {
+                const worldData = await Promise.any([
+                    fetchWithTimeout("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json", 4500),
+                    fetchWithTimeout("https://unpkg.com/world-atlas@2/countries-110m.json", 4500)
+                ]);
+                countriesFeatures = topojson.feature(worldData, worldData.objects.countries).features;
+                if (badgeEl) badgeEl.textContent = "Proyección Mercator Real • 27 Miembros UE";
+            } catch (err) {
+                countriesFeatures = getFallbackEuropeGeoJSON();
+                if (badgeEl) badgeEl.textContent = "Cartografía Vectorial Local • 27 Miembros UE";
+            }
+
+            if (loadingEl) loadingEl.remove();
+
+            const width = 880;
+            const height = 600;
+
+            d3Svg = d3.select("#d3-eu-map-container")
+                .append("svg")
+                .attr("viewBox", `0 0 ${width} ${height}`)
+                .attr("preserveAspectRatio", "xMidYMid meet");
+
+            const projection = d3.geoMercator()
+                .center([15.2, 52.8])
+                .scale(680)
+                .translate([width / 2, height / 2]);
+
+            const pathGenerator = d3.geoPath().projection(projection);
+            const graticule = d3.geoGraticule().step([10, 10]);
+
+            const mapGroup = d3Svg.append("g").attr("id", "eu-cartography-layer");
+
+            mapGroup.append("path")
+                .datum(graticule)
+                .attr("d", pathGenerator)
+                .attr("fill", "none")
+                .attr("stroke", "#0f2347")
+                .attr("stroke-width", 0.65);
+
+            mapGroup.selectAll("path.country-shape")
+                .data(countriesFeatures)
+                .enter()
+                .append("path")
+                .attr("d", pathGenerator)
+                .attr("class", d => {
+                    const iso = String(d.id).padStart(3, "0");
+                    return EU_BY_ISO[iso] ? "country-shape country-eu" : "country-shape country-non-eu";
+                })
+                .attr("data-country-id", d => {
+                    const iso = String(d.id).padStart(3, "0");
+                    return EU_BY_ISO[iso] ? EU_BY_ISO[iso].id : "";
+                })
+                .on("mouseenter", function (event, d) {
+                    const iso = String(d.id).padStart(3, "0");
+                    const country = EU_BY_ISO[iso];
+                    if (!country) return;
+                    highlightCountryOnMap(country.id, true);
+                    showMapTooltip(country, event);
+                })
+                .on("mousemove", function (event, d) {
+                    const iso = String(d.id).padStart(3, "0");
+                    if (EU_BY_ISO[iso]) positionMapTooltip(event);
+                })
+                .on("mouseleave", function (event, d) {
+                    const iso = String(d.id).padStart(3, "0");
+                    const country = EU_BY_ISO[iso];
+                    if (!country) return;
+                    highlightCountryOnMap(country.id, false);
+                    hideMapTooltip();
+                })
+                .on("click", function (event, d) {
+                    const iso = String(d.id).padStart(3, "0");
+                    const country = EU_BY_ISO[iso];
+                    if (!country) return;
+                    hideMapTooltip();
+                    navigateTo("detail", country.id);
+                });
+
+            const microstates = [
+                { id: "mt", coords: [14.45, 35.9], label: "MT" },
+                { id: "lu", coords: [6.13, 49.81], label: "LU" }
+            ];
+
+            microstates.forEach(ms => {
+                const country = EU_COUNTRIES.find(c => c.id === ms.id);
+                if (!country) return;
+                const [cx, cy] = projection(ms.coords);
+
+                const pinGroup = mapGroup.append("g")
+                    .attr("class", "cursor-pointer")
+                    .on("mouseenter", (event) => {
+                        highlightCountryOnMap(country.id, true);
+                        showMapTooltip(country, event);
+                    })
+                    .on("mousemove", (event) => positionMapTooltip(event))
+                    .on("mouseleave", () => {
+                        highlightCountryOnMap(country.id, false);
+                        hideMapTooltip();
+                    })
+                    .on("click", () => {
+                        hideMapTooltip();
+                        navigateTo("detail", country.id);
+                    });
+
+                pinGroup.append("circle")
+                    .attr("cx", cx)
+                    .attr("cy", cy)
+                    .attr("r", 7)
+                    .attr("data-country-id", country.id)
+                    .attr("class", "microstate-pin");
+
+                pinGroup.append("text")
+                    .attr("x", cx)
+                    .attr("y", cy + 16)
+                    .attr("text-anchor", "middle")
+                    .attr("fill", "#FFCC00")
+                    .attr("font-size", "8.5px")
+                    .attr("font-weight", "bold")
+                    .text(ms.label);
+            });
+
+            d3Zoom = d3.zoom()
+                .scaleExtent([1, 7])
+                .on("zoom", (event) => {
+                    mapGroup.attr("transform", event.transform);
+                });
+
+            d3Svg.call(d3Zoom);
+        }
+
+        function zoomMapBy(factor) {
+            if (!d3Svg || !d3Zoom) return;
+            d3Svg.transition().duration(280).call(d3Zoom.scaleBy, factor);
+        }
+
+        function resetMapZoom() {
+            if (!d3Svg || !d3Zoom) return;
+            d3Svg.transition().duration(320).call(d3Zoom.transform, d3.zoomIdentity);
+        }
+
+        function highlightCountryOnMap(countryId, active) {
+            const container = document.getElementById('d3-eu-map-container');
+            if (!container) return;
+            container.querySelectorAll(`[data-country-id="${countryId}"]`).forEach(el => {
+                if (active) el.classList.add('highlighted');
+                else el.classList.remove('highlighted');
+            });
+        }
+
+        function showMapTooltip(country, event) {
+            const tooltip = document.getElementById('map-tooltip');
+            if (!tooltip) return;
+
+            document.getElementById('tt-flag-img').src = getFlagUrl(country.id, 80);
+            document.getElementById('tt-name').textContent = country.name;
+            document.getElementById('tt-region').textContent = `Europa ${country.region}`;
+            document.getElementById('tt-capital').textContent = country.capital;
+            document.getElementById('tt-currency').textContent = country.currency;
+            document.getElementById('tt-population').textContent = country.population;
+
+            tooltip.classList.remove('hidden');
+            positionMapTooltip(event);
+        }
+
+        function positionMapTooltip(event) {
+            const tooltip = document.getElementById('map-tooltip');
+            if (!tooltip || tooltip.classList.contains('hidden')) return;
+
+            const offset = 16;
+            const rect = tooltip.getBoundingClientRect();
+            let left = event.clientX + offset;
+            let top = event.clientY + offset;
+
+            if (left + rect.width > window.innerWidth - 12) {
+                left = event.clientX - rect.width - offset;
+            }
+            if (top + rect.height > window.innerHeight - 12) {
+                top = event.clientY - rect.height - offset;
+            }
+
+            tooltip.style.left = `${Math.max(8, left)}px`;
+            tooltip.style.top = `${Math.max(8, top)}px`;
+        }
+
+        function hideMapTooltip() {
+            const tooltip = document.getElementById('map-tooltip');
+            if (tooltip) tooltip.classList.add('hidden');
+        }
+
+        function setMapGridRegion(region) {
+            selectedMapGridRegion = region;
+            document.querySelectorAll('.map-reg-pill').forEach(btn => {
+                if (btn.getAttribute('data-map-region') === region) {
+                    btn.className = 'map-reg-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-euBlue text-white transition-colors cursor-pointer';
+                } else {
+                    btn.className = 'map-reg-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer';
+                }
+            });
+            renderMapBottomGrid();
+        }
+
+        function renderMapBottomGrid() {
+            const grid = document.getElementById('map-bottom-grid');
+            if (!grid) return;
+
+            const list = [...EU_COUNTRIES]
+                .filter(c => selectedMapGridRegion === 'all' || c.region === selectedMapGridRegion)
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            grid.innerHTML = list.map(c => `
+                <button onclick="navigateTo('detail', '${c.id}')"
+                        onmouseenter="highlightCountryOnMap('${c.id}', true)"
+                        onmouseleave="highlightCountryOnMap('${c.id}', false)"
+                        class="text-left p-3 rounded-2xl border border-slate-200 hover:border-euBlue hover:bg-blue-50/70 transition-all flex items-center justify-between group cursor-pointer">
+                    <div class="flex items-center space-x-3 min-w-0">
+                        <img src="${getFlagUrl(c.id, 80)}" alt="${c.name}" class="w-8 h-5 object-cover rounded shadow-sm flex-shrink-0 border border-slate-200">
+                        <div class="truncate">
+                            <span class="text-xs font-extrabold text-slate-900 group-hover:text-euBlue block truncate">${c.name}</span>
+                            <span class="text-[11px] text-slate-500 block truncate">Capital: ${c.capital}</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-arrow-right text-xs text-slate-300 group-hover:text-euBlue group-hover:translate-x-0.5 transition-all flex-shrink-0 ml-2"></i>
+                </button>
+            `).join('');
+        }
+
+        // =========================================================================
+        // 4. VISTA 'QUÉ HACER' — CATÁLOGO POR CATEGORÍAS Y BUSCADOR
+        // =========================================================================
+        function openCatalogWithCategory(cat) {
+            navigateTo('what');
+            setCatalogCategory(cat);
+        }
+
+        function setCatalogCategory(cat) {
+            selectedCatalogCategory = cat;
+            document.querySelectorAll('.cat-pill').forEach(btn => {
+                if (btn.getAttribute('data-cat') === cat) {
+                    btn.className = 'cat-pill px-4 py-2 rounded-xl text-xs font-bold bg-euBlue text-white transition-colors cursor-pointer';
+                } else {
+                    btn.className = 'cat-pill px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer';
+                }
+            });
+            renderCatalogCards();
+        }
+
+        function renderCatalogCards() {
+            const grid = document.getElementById('catalog-cards-grid');
+            if (!grid) return;
+
+            const search = (document.getElementById('catalog-search-input')?.value || '').trim().toLowerCase();
+            const sortOrder = document.getElementById('catalog-sort-select')?.value || 'az';
+
+            const filtered = [...EU_COUNTRIES]
+                .filter(c => {
+                    const matchCat = selectedCatalogCategory === 'all' || c.category === selectedCatalogCategory;
+                    const matchSearch = !search ||
+                        c.name.toLowerCase().includes(search) ||
+                        c.capital.toLowerCase().includes(search) ||
+                        c.region.toLowerCase().includes(search) ||
+                        c.zones.some(z => z.name.toLowerCase().includes(search));
+                    return matchCat && matchSearch;
+                })
+                .sort((a, b) => {
+                    if (sortOrder === 'za') return b.name.localeCompare(a.name);
+                    if (sortOrder === 'capital') return a.capital.localeCompare(b.capital);
+                    return a.name.localeCompare(b.name);
+                });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full bg-white rounded-3xl border border-slate-200 p-12 text-center text-slate-500 text-sm">No se encontraron países con los filtros seleccionados.</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(country => {
+                const previewZone = country.zones[0];
+                const catImgId = `cat-card-img-${country.id}`;
+                // Cargar foto real de la capital/monumento principal desde Wikipedia
+                fetchWikiLeadImage(country.heroWiki, getFlagUrl(country.id, 640)).then(src => {
+                    const imgEl = document.getElementById(catImgId);
+                    if (imgEl && src) imgEl.src = src;
+                });
+
+                return `
+                    <div onclick="navigateTo('detail', '${country.id}')" class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group flex flex-col">
+                        <div class="relative h-48 overflow-hidden bg-slate-900">
+                            <img id="${catImgId}" src="${getFlagUrl(country.id, 640)}"
+                                 alt="${country.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            <div class="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-xs font-extrabold text-slate-900 shadow flex items-center space-x-2">
+                                <img src="${getFlagUrl(country.id, 40)}" alt="${country.name}" class="w-4 h-3 object-cover rounded-xs">
+                                <span>${country.name}</span>
+                            </div>
+                            <span class="absolute top-3.5 right-3.5 bg-slate-950/80 backdrop-blur-md text-euGold text-[10px] font-bold px-2.5 py-1 rounded-full">
+                                ${country.category}
+                            </span>
+                        </div>
+                        <div class="p-6 flex flex-col flex-grow justify-between">
+                            <div>
+                                <div class="flex items-center justify-between text-xs mb-2">
+                                    <span class="font-bold text-euBlue"><i class="fa-solid fa-landmark mr-1"></i> Capital: ${country.capital}</span>
+                                    <span class="text-slate-400 font-medium">Europa ${country.region}</span>
+                                </div>
+                                <p class="text-slate-600 text-sm line-clamp-2 leading-relaxed mb-3">${country.description}</p>
+                                <div class="bg-slate-50 rounded-xl p-2.5 text-xs text-slate-700 border border-slate-100">
+                                    <span class="font-bold text-amber-700"><i class="fa-solid fa-star mr-1"></i> Destacado:</span> ${previewZone.name}
+                                </div>
+                            </div>
+                            <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-euBlue">
+                                <span>Ver capital y zona aleatoria</span>
+                                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // =========================================================================
+        // 5. PÁGINA INFORMATIVA DE PAÍS + GALERÍA REAL DE ZONA ALEATORIA
+        // =========================================================================
+        let lastZoneIndex = -1;
+        let currentZoneImages = [];
+        let activeZoneToken = 0;
+
+        async function loadCountryDetail(countryId) {
+            const country = EU_COUNTRIES.find(c => c.id === countryId);
+            if (!country) return;
+
+            activeDetailCountry = country;
+            lastZoneIndex = -1;
+
+            const heroImg = document.getElementById('detail-hero-img');
+            heroImg.src = getFlagUrl(country.id, 1280);
+            fetchWikiLeadImage(country.heroWiki, getFlagUrl(country.id, 1280)).then(realSrc => {
+                if (activeDetailCountry?.id === country.id && realSrc) {
+                    heroImg.src = realSrc;
+                }
+            });
+
+            document.getElementById('detail-flag-img').src = getFlagUrl(country.id, 160);
+            document.getElementById('detail-region-badge').textContent = `Europa ${country.region} • ${country.category}`;
+            document.getElementById('detail-name').textContent = country.name;
+            document.getElementById('detail-capital').textContent = country.capital;
+            document.getElementById('detail-population').textContent = country.population;
+            document.getElementById('detail-language').textContent = country.language;
+            document.getElementById('detail-currency').textContent = country.currency;
+
+            document.getElementById('detail-description').textContent = country.description;
+            document.getElementById('detail-capital-heading').textContent = `${country.capital} — Capital de ${country.name}`;
+            document.getElementById('detail-capital-text').textContent = country.capitalDesc;
+
+            rerollRandomZone();
+			initFoodCarousel(country.id);
+			renderCountryTraditions(country.id);
+        }
+
+        async function rerollRandomZone() {
+            if (!activeDetailCountry) return;
+            const country = activeDetailCountry;
+            const zones = country.zones;
+            let idx = Math.floor(Math.random() * zones.length);
+            if (zones.length > 1 && idx === lastZoneIndex) {
+                idx = (idx + 1) % zones.length;
+            }
+            lastZoneIndex = idx;
+            const zone = zones[idx];
+
+            const token = ++activeZoneToken;
+
+            const card = document.getElementById('detail-random-zone-card');
+            if (card) {
+                card.classList.remove('zone-animate');
+                void card.offsetWidth;
+                card.classList.add('zone-animate');
+            }
+
+            document.getElementById('detail-zone-title').textContent = zone.name;
+            document.getElementById('detail-zone-desc').textContent = zone.desc;
+
+            document.getElementById('detail-zone-highlights').innerHTML = zone.highlights.map(item => `
+                <li class="flex items-start space-x-2.5">
+                    <i class="fa-solid fa-circle-check text-euBlue mt-0.5 flex-shrink-0"></i>
+                    <span>${item}</span>
+                </li>
+            `).join('');
+
+            // Mostrar placeholders de carga suaves mientras llegan las 3 fotos reales de Wikimedia Commons
+            const thumbsContainer = document.getElementById('detail-zone-thumbs');
+            const mainImg = document.getElementById('detail-zone-main-img');
+            const counter = document.getElementById('detail-zone-photo-counter');
+
+            if (mainImg) mainImg.src = getFlagUrl(country.id, 1280);
+            if (counter) counter.textContent = "Cargando fotos reales...";
+            if (thumbsContainer) {
+                thumbsContainer.innerHTML = [0, 1, 2].map(() => `
+                    <div class="rounded-xl h-24 sm:h-28 bg-slate-200 animate-pulse"></div>
+                `).join('');
+            }
+
+            // Obtener 3 fotografías reales de esa zona concreta
+            const photos = await fetchZonePhotos(zone.wikis, getFlagUrl(country.id, 1280));
+            if (token !== activeZoneToken) return; // Evitar condiciones de carrera si el usuario pulsa rápido
+
+            currentZoneImages = photos;
+
+            if (thumbsContainer) {
+                thumbsContainer.innerHTML = currentZoneImages.map((imgUrl, i) => `
+                    <button type="button" onclick="selectZoneGalleryImage(${i})" data-thumb-idx="${i}"
+                            class="zone-thumb-btn relative rounded-xl overflow-hidden border-2 border-transparent h-24 sm:h-28 bg-slate-100 cursor-pointer transition-all hover:opacity-95 focus:outline-none">
+                        <img src="${imgUrl}"
+                             alt="Vista ${i + 1} de ${zone.name}"
+                             class="w-full h-full object-cover">
+                    </button>
+                `).join('');
+            }
+
+            selectZoneGalleryImage(0, false);
+        }
+
+        function selectZoneGalleryImage(index, animate = true) {
+            if (!currentZoneImages.length) return;
+            const selectedUrl = currentZoneImages[index] || currentZoneImages[0];
+
+            const mainImg = document.getElementById('detail-zone-main-img');
+            const counter = document.getElementById('detail-zone-photo-counter');
+
+            if (mainImg) {
+                mainImg.src = selectedUrl;
+                if (animate) {
+                    mainImg.classList.remove('gallery-swap');
+                    void mainImg.offsetWidth;
+                    mainImg.classList.add('gallery-swap');
+                }
+            }
+
+            if (counter) {
+                counter.textContent = `Foto ${index + 1} de ${currentZoneImages.length}`;
+            }
+
+            document.querySelectorAll('.zone-thumb-btn').forEach((btn, idx) => {
+                if (idx === index) {
+                    btn.classList.remove('border-transparent', 'opacity-75');
+                    btn.classList.add('border-euBlue', 'ring-2', 'ring-euGold', 'opacity-100');
+                } else {
+                    btn.classList.remove('border-euBlue', 'ring-2', 'ring-euGold', 'opacity-100');
+                    btn.classList.add('border-transparent', 'opacity-75');
+                }
+            });
+        }
+
+        function openRandomCountry() {
+            const randomCountry = EU_COUNTRIES[Math.floor(Math.random() * EU_COUNTRIES.length)];
+            navigateTo('detail', randomCountry.id);
+        }
+
+        // =========================================================================
+        // MODAL DE INFORMACIÓN
+        // =========================================================================
+        function openInfoModal(title, body) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-body').textContent = body;
+            const modal = document.getElementById('custom-modal');
+            const box = document.getElementById('modal-box');
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                box.classList.remove('scale-95', 'opacity-0');
+                box.classList.add('scale-100', 'opacity-100');
+            });
+        }
+
+        function closeCustomModal() {
+            const modal = document.getElementById('custom-modal');
+            const box = document.getElementById('modal-box');
+            box.classList.remove('scale-100', 'opacity-100');
+            box.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 180);
+        }
+		// =========================================================================
+        // CARRUSEL DE COMIDAS TÍPICAS CON DESCRIPCIÓN SINCRONIZADA
+        // =========================================================================
+        let currentFoodList = [];
+        let currentFoodIndex = 0;
+
+        async function initFoodCarousel(countryId) {
+            const foods = EU_FOODS_BY_COUNTRY[countryId] || [];
+            currentFoodIndex = 0;
+            currentFoodList = foods.map(f => ({ ...f, resolvedImg: getFlagUrl(countryId, 640) }));
+
+            renderFoodSlide(false);
+
+            // Cargar imágenes reales en segundo plano
+            foods.forEach(async (food, idx) => {
+                const realUrl = await fetchWikiLeadImage(food.wiki, getFlagUrl(countryId, 640));
+                if (activeDetailCountry?.id === countryId && currentFoodList[idx]) {
+                    currentFoodList[idx].resolvedImg = realUrl;
+                    if (idx === currentFoodIndex) {
+                        const imgEl = document.getElementById('food-carousel-img');
+                        if (imgEl) imgEl.src = realUrl;
+                    }
+                }
+            });
+        }
+
+        function renderFoodSlide(animate = true) {
+            if (!currentFoodList.length) return;
+            const item = currentFoodList[currentFoodIndex];
+
+            const imgEl = document.getElementById('food-carousel-img');
+            const titleEl = document.getElementById('food-carousel-title');
+            const descEl = document.getElementById('food-carousel-desc');
+            const tagEl = document.getElementById('food-carousel-tag');
+            const counterEl = document.getElementById('food-carousel-counter');
+            const dotsEl = document.getElementById('food-carousel-dots');
+
+            if (imgEl) {
+                imgEl.src = item.resolvedImg;
+                if (animate) {
+                    imgEl.classList.remove('gallery-swap');
+                    void imgEl.offsetWidth;
+                    imgEl.classList.add('gallery-swap');
+                }
+            }
+            if (tagEl) tagEl.textContent = item.tag;
+            if (titleEl) titleEl.textContent = item.name;
+            if (descEl) descEl.textContent = item.desc;
+            if (counterEl) counterEl.textContent = `${currentFoodIndex + 1} / ${currentFoodList.length}`;
+
+            if (dotsEl) {
+                dotsEl.innerHTML = currentFoodList.map((_, i) => `
+                    <button type="button" onclick="goToFoodSlide(${i})" aria-label="Ver plato ${i + 1}"
+                            class="w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${i === currentFoodIndex ? 'bg-euGold w-5' : 'bg-white/50 hover:bg-white'}">
+                    </button>
+                `).join('');
+            }
+        }
+
+        function nextFoodSlide() {
+            if (!currentFoodList.length) return;
+            currentFoodIndex = (currentFoodIndex + 1) % currentFoodList.length;
+            renderFoodSlide(true);
+        }
+
+        function prevFoodSlide() {
+            if (!currentFoodList.length) return;
+            currentFoodIndex = (currentFoodIndex - 1 + currentFoodList.length) % currentFoodList.length;
+            renderFoodSlide(true);
+        }
+
+        function goToFoodSlide(index) {
+            currentFoodIndex = index;
+            renderFoodSlide(true);
+        }
+		// =========================================================================
+        // MODO OSCURO CON PERSISTENCIA EN LOCALSTORAGE
+        // =========================================================================
+        function initTheme() {
+            const saved = localStorage.getItem('euroguia-theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'dark' || (!saved && prefersDark)) {
+                document.documentElement.classList.add('dark');
+                updateThemeIcon(true);
+            }
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('euroguia-theme', isDark ? 'dark' : 'light');
+            updateThemeIcon(isDark);
+        }
+
+        function updateThemeIcon(isDark) {
+            const icon = document.getElementById('theme-toggle-icon');
+            if (icon) {
+                icon.className = isDark ? 'fa-solid fa-sun text-euGold text-base' : 'fa-solid fa-moon text-base';
+            }
+        }
+	// =========================================================================
+        // RENDERIZAR BAILES Y TRADICIONES DE CADA PAÍS
+        // =========================================================================
+        function renderCountryTraditions(countryId) {
+            const grid = document.getElementById('detail-traditions-grid');
+            if (!grid) return;
+
+            const items = EU_TRADITIONS_BY_COUNTRY[countryId] || [];
+            grid.innerHTML = items.map((item, idx) => {
+                const imgId = `tradition-img-${countryId}-${idx}`;
+                fetchWikiLeadImage(item.wiki, getFlagUrl(countryId, 640)).then(url => {
+                    const el = document.getElementById(imgId);
+                    if (el && url) el.src = url;
+                });
+
+                return `
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden flex flex-col sm:flex-row">
+                        <div class="sm:w-44 h-44 sm:h-auto flex-shrink-0 bg-slate-900 overflow-hidden">
+                            <img id="${imgId}" src="${getFlagUrl(countryId, 640)}" alt="${item.name}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-5 flex flex-col justify-center">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-purple-600 mb-1">${item.tag}</span>
+                            <h3 class="font-display text-lg font-extrabold text-slate-900 mb-1.5">${item.name}</h3>
+                            <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">${item.desc}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+	</script>
+</body>
+</html>
