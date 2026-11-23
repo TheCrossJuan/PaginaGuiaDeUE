@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitácora Completa de Desarrollo — EUROGUÍA UE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        euBlue: '#003399',
+                        euGold: '#FFCC00',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-950 text-slate-200 font-sans antialiased selection:bg-euGold selection:text-slate-950">
+
+    <!-- CABECERA -->
+    <header class="border-b border-slate-800 bg-slate-900/85 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-euBlue text-euGold flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-code-branch text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-display font-extrabold text-white text-base sm:text-lg leading-tight">Bitácora Completa: EUROGUÍA UE</h1>
+                    <p class="text-xs text-slate-400">Historial integral de prompts, iteraciones técnicas y arquitectura del mapa D3.js</p>
+                </div>
+            </div>
+            <a href="#codigo-mapa" class="bg-euGold hover:bg-yellow-400 text-slate-950 text-xs font-extrabold px-4 py-2 rounded-xl transition-colors">
+                <i class="fa-solid fa-map-location-dot mr-1.5"></i> Ver código del mapa
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-12">
+
+        <!-- INTRODUCCIÓN -->
+        <section class="bg-gradient-to-br from-euBlue/30 via-slate-900 to-slate-900 border border-blue-500/30 rounded-3xl p-6 sm:p-8 shadow-xl">
+            <div class="flex flex-wrap items-center gap-2 mb-4">
+                <span class="inline-flex items-center space-x-2 bg-euBlue text-euGold text-xs font-bold px-3 py-1 rounded-full">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Historial Completo de Iteraciones</span>
+                </span>
+                <span class="bg-slate-800 text-slate-300 text-xs font-semibold px-3 py-1 rounded-full">
+                    10 Fases Documentadas
+                </span>
+            </div>
+            <h2 class="font-display text-2xl sm:text-3xl font-extrabold text-white mb-3">
+                Desarrollo Integral de EUROGUÍA UE
+            </h2>
+            <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                Este documento recoge <strong>todas las peticiones y soluciones técnicas aplicadas</strong> desde la creación inicial de la guía turística de los 27 países de la Unión Europea, pasando por la evolución de su motor de fotografías (Wikipedia + Wikimedia Commons), la gastronomía, el modo oscuro y las tradiciones, destacando exclusivamente el código fuente del <strong>mapa cartográfico interactivo (D3.js + TopoJSON)</strong>.
+            </p>
+        </section>
+
+        <!-- LÍNEA TEMPORAL COMPLETA DE PROMPTS Y RESPUESTAS -->
+        <section class="space-y-6">
+            <div class="flex items-center space-x-2.5">
+                <i class="fa-solid fa-comments text-euGold text-xl"></i>
+                <h2 class="font-display text-2xl font-extrabold text-white">Registro Completo de Prompts y Respuestas</h2>
+            </div>
+
+            <div class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-euBlue before:via-slate-700 before:to-transparent">
+
+                <!-- FASE 1 -->
+                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-euGold bg-slate-900 text-euGold font-bold text-xs shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                        1
+                    </div>
+                    <div class="w-[calc(100%-3.5rem)] md:w-[calc(50%-2.25rem)] bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-sky-400 block mb-1.5">Corrección de imágenes rotas y fuera de contexto (API Wikimedia)</span>
+                        <div class="bg-slate-950/90 border-l-2 border-euGold p-3 rounded-r-xl mb-3">
+                            <span class="text-[10px] font-bold uppercase text-euGold block mb-0.5">Prompt del usuario:</span>
+                            <p class="text-xs text-slate-200 italic">«Bufff aún veo imágenes fuera de contexto de zonas turísticas concretas y hay algunos países que no tienen ni principal.»</p>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            <strong class="text-white">Respuesta:</strong> Se eliminaron las URLs estáticas escritas a mano (que provocaban hashes rotos o fotos repetidas entre países) y se implementó una consulta dinámica a la API oficial de Wikipedia (<code class="text-euGold bg-slate-800 px-1.5 py-0.5 rounded">fetchWikiLeadImage</code>) para la foto principal de cada país y a Wikimedia Commons (<code class="text-blue-300">gsrsearch</code>) para las 3 fotos de cada zona, usando banderas HD (<code class="text-blue-300">flagcdn.com</code>) como respaldo instantáneo.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FASE 2 -->
+                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-euGold bg-slate-900 text-euGold font-bold text-xs shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                        2
+                    </div>
+                    <div class="w-[calc(100%-3.5rem)] md:w-[calc(50%-2.25rem)] bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-teal-400 block mb-1.5">Curación por artículo real de Wikipedia (adiós carteles de senderismo)</span>
+                        <div class="bg-slate-950/90 border-l-2 border-euGold p-3 rounded-r-xl mb-3">
+                            <span class="text-[10px] font-bold uppercase text-euGold block mb-0.5">Prompt del usuario:</span>
+                            <p class="text-xs text-slate-200 italic">«¿Qué es esto Gemini? Jajajajaja [mostrando un cartel metálico de perfil topográfico en lugar de una cala de Mallorca].»</p>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            <strong class="text-white">Respuesta:</strong> Se sustituyó la búsqueda abierta <code class="text-blue-300">gsrsearch</code> (que devolvía carteles informativos o mapas) por un array de <strong>3 artículos concretos de Wikipedia por zona</strong> (<code class="text-euGold bg-slate-800 px-1.5 py-0.5 rounded">wikis: [...]</code>) con <code class="text-blue-300">prop=pageimages</code> y respaldo bilingüe (<code class="text-blue-300">es</code> → <code class="text-blue-300">en</code>), garantizando 81 ubicaciones reales curadas como Cala Macarella o el Castillo de Neuschwanstein.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FASE 3 -->
+                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-euGold bg-slate-900 text-euGold font-bold text-xs shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                        3
+                    </div>
+                    <div class="w-[calc(100%-3.5rem)] md:w-[calc(50%-2.25rem)] bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400 block mb-1.5">Duda sobre el reemplazo del bloque &lt;script&gt;</span>
+                        <div class="bg-slate-950/90 border-l-2 border-euGold p-3 rounded-r-xl mb-3">
+                            <span class="text-[10px] font-bold uppercase text-euGold block mb-0.5">Prompt del usuario:</span>
+                            <p class="text-xs text-slate-200 italic">«¿Sustituyo el bloque script entero con el código que me has pasado?»</p>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            <strong class="text-white">Respuesta:</strong> Se aclaró que <strong>no debía sustituirse entero</strong>, ya que borrar todo el <code class="text-blue-300">&lt;script&gt;</code> habría eliminado el mapa D3.js, la navegación SPA y los filtros. Se indicó reemplazar únicamente el diccionario <code class="text-euGold bg-slate-800 px-1.5 py-0.5 rounded">EU_COUNTRIES</code> y las funciones de carga de imágenes, cambiando <code class="text-blue-300">.query</code> por <code class="text-blue-300">.wikis</code>.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FASE 4 -->
+                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-euGold bg-slate-900 text-euGold font-bold text-xs shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                        4
+                    </div>
+                    <div class="w-[calc(100%-3.5rem)] md:w-[calc(50%-2.25rem)] bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-cyan-400 block mb-1.5">Optimización de tokens y localización exacta de líneas</span>
+                        <div class="bg-slate-950/90 border-l-2 border-euGold p-3 rounded-r-xl mb-3">
+                            <span class="text-[10px] font-bold uppercase text-euGold block mb-0.5">Prompts del usuario:</span>
+                            <p class="text-xs text-slate-200 italic">«Tranqui Gemini tranqui, no consumas todos los tokens.» / «No lo encuentra, ¿me puedes indicar la línea?» / «Es que ese trozo no lo pegué porque no me quedó claro si hay que sustituir o simplemente añadirlo.»</p>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            <strong class="text-white">Respuesta:</strong> Se precisaron las líneas exactas del archivo (<code class="text-euGold bg-slate-800 px-1.5 py-0.5 rounded">línea 406</code> hasta la <code class="text-euGold bg-slate-800 px-1.5 py-0.5 rounded">línea 685</code>), aclarando que debía <strong>sustituirse</strong> para no duplicar constantes y actualizando las 2 llamadas a <code class="text-blue-300">.wikis</code> en las líneas 863 y 1207.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FASE 5 -->
+                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-euGold bg-slate-900 text-euGold font-bold text-xs shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                        5
+                    </div>
+                    <div class="w-[calc(100%-3.5rem)] md:w-[calc(50%-2.25rem)] bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400 block mb-1.5">Personalización manual de miniaturas</span>
+                        <div class="bg-slate-950/90 border-l-2 border-euGold p-3 rounded-r-xl mb-3">
+                            <span class="text-[10px] font-bold uppercase text-euGold block mb-0.5">Prompt del usuario:</span>
+                            <p class="text-xs text-slate-200 italic">«Indícame otra vez lo de cambiar las imágenes pequeñas, voy a poner algunas yo que no todas me cuadran.»</p>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            <strong class="text-white">Respuesta:</strong> Se añadió una detección automática por expresión regular en <code class="text-euGold bg-slate-800 px-1.5 py-0.5 rounded">fetchWikiLeadImage()</code> para admitir tanto títulos de Wikipedia como URLs directas (<code class="text-blue-300">https://...</code>) o rutas de carpeta local (<code class="text-blue-300">img/...</code>).
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FASE 6 -->
+                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-euGold bg-slate-900 text-euGold font-bold text-xs shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                        6
+                    </div>
+                    <div class="w-[calc(100%-3.5rem)] md:w-[calc(50%-2.25rem)] bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-rose-400 block mb-1.5">Carrusel gastronómico con descripción dinámica</span>
+                        <div class="bg-slate-950/90 border-l-2 border-euGold p-3 rounded-r-xl mb-3">
+                            <span class="text-[10px] font-bold uppercase text-euGold block mb-0.5">Prompt del usuario:</span>
+                            <p class="text-xs text-slate-200 italic">«¿Puedes añadir las comidas típicas en cada país? Intenta que haya un carrusel de imágenes que cambie la propia descripción cuando pase a otra; por ejemplo: está el de paella pone una descripción de la paella, está la de la tortilla de patatas con cebolla pone la descripción de la tortilla de patatas con cebolla.»</p>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            <strong class="text-white">Respuesta:</strong> Se creó <code class="text-euGold bg-slate-800 px-1.5 py-0.5 rounded">EU_FOODS_BY_COUNTRY</code> con 3 platos típicos por cada uno de los 27 países (81 platos en total, incluyendo Paella Valenciana y Tortilla de Patatas con Cebolla) y un carrusel interactivo que actualiza foto, categoría, título y descripción al avanzar.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FASE 7 -->
+                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-euGold bg-slate-900 text-euGold font-bold text-xs shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                        7
+                    </div>
+                    <div class="w-[calc(100%-3.5rem)] md:w-[calc(50%-2.25rem)] bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400 block mb-1.5">Modo oscuro y ajuste de contraste en etiquetas</span>
+                        <div class="bg-slate-950/90 border-l-2 border-euGold p-3 rounded-r-xl mb-3">
+                            <span class="text-[10px] font-bold uppercase text-euGold block mb-0.5">Prompts del usuario:</span>
+                            <p class="text-xs text-slate-200 italic">«Ahora por último añade un modo oscuro.» / «Ayyy los textos de arriba a la izquierda con la bandera [adjuntando captura de texto blanco ilegible sobre fondo blanco].»</p>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            <strong class="text-white">Respuesta:</strong> Se implementó <code class="text-euGold bg-slate-800 px-1.5 py-0.5 rounded">darkMode: 'class'</code> con botón Sol/Luna y persistencia en <code class="text-blue-300">localStorage</code>, corrigiendo de inmediato la clase <code class="text-blue-300">.bg-white/95</code> en la pastilla flotante de la bandera para garantizar contraste en modo oscuro.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FASE 8 -->
+                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-euGold bg-slate-900 text-euGold font-bold text-xs shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                        8
+                    </div>
+                    <div class="w-[calc(100%-3.5rem)] md:w-[calc(50%-2.25rem)] bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-purple-400 block mb-1.5">Sección de bailes y tradiciones típicas</span>
+                        <div class="bg-slate-950/90 border-l-2 border-euGold p-3 rounded-r-xl mb-3">
+                            <span class="text-[10px] font-bold uppercase text-euGold block mb-0.5">Prompt del usuario:</span>
+                            <p class="text-xs text-slate-200 italic">«Hazme una última cosa, añade una sección de bailes/tradiciones de cada país.»</p>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            <strong class="text-white">Respuesta:</strong> Se incorporó <code class="text-euGold bg-slate-800 px-1.5 py-0.5 rounded">EU_TRADITIONS_BY_COUNTRY</code> con 54 danzas y celebraciones folclóricas de los 27 Estados miembros (Flamenco, Vals Vienés, Tarantella, Sirtaki, Polka, Midsommar, etc.) y <code class="text-blue-300">renderCountryTraditions()</code>.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FASE 9 -->
+                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-euGold bg-slate-900 text-euGold font-bold text-xs shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                        9
+                    </div>
+                    <div class="w-[calc(100%-3.5rem)] md:w-[calc(50%-2.25rem)] bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-400 block mb-1.5">Documentación HTML explicativa completa</span>
+                        <div class="bg-slate-950/90 border-l-2 border-euGold p-3 rounded-r-xl mb-3">
+                            <span class="text-[10px] font-bold uppercase text-euGold block mb-0.5">Prompts del usuario:</span>
+                            <p class="text-xs text-slate-200 italic">«Mira a ver si puedes hacer un HTML explicativo sobre los prompts que te he mandado y las respuestas, no tienes que poner todo el código de la página (solamente destaca el código del mapa).» / «¿No puede incluir todos?» / «Es que hay más cosas, ¿te falta contexto?»</p>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            <strong class="text-white">Respuesta:</strong> Con el contexto completo de las iteraciones previas recuperado, se consolidó esta bitácora HTML final con las <strong>10 fases cronológicas completas</strong> del proyecto y el bloque de código fuente destacado del mapa interactivo D3.js.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FASE 10 -->
+                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-euGold bg-slate-900 text-euGold font-bold text-xs shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                        10
+                    </div>
+                    <div class="w-[calc(100%-3.5rem)] md:w-[calc(50%-2.25rem)] bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-amber-300 block mb-1.5">Corrección de saltos de línea y actualización del resumen de prompts</span>
+                        <div class="bg-slate-950/90 border-l-2 border-euGold p-3 rounded-r-xl mb-3">
+                            <span class="text-[10px] font-bold uppercase text-euGold block mb-0.5">Prompts del usuario:</span>
+                            <p class="text-xs text-slate-200 italic">«no gemini me referia a añadirle los promtps que te he pasado al resumen» / «me referia a añadirle los promtps que te he pasado al resumen» / «no me has generado nada» (adjuntando la bitácora HTML para incorporar los prompts y generar el archivo).</p>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            <strong class="text-white">Respuesta:</strong> Se repararon los saltos de línea sin escapar en <code class="text-euGold bg-slate-800 px-1.5 py-0.5 rounded">renderHomeFeatured()</code> y <code class="text-blue-300">loadCountryDetail()</code> para garantizar la galería interactiva de 3 fotos por zona aleatoria, y se generó este archivo HTML descargable con todos los prompts integrados y el código destacado del mapa D3.js.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SECCIÓN DESTACADA: CÓDIGO DEL MAPA INTERACTIVO -->
+        <section id="codigo-mapa" class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+                <div>
+                    <span class="inline-flex items-center space-x-1.5 bg-blue-950 text-blue-300 border border-blue-800 text-xs font-bold px-3 py-1 rounded-full mb-2">
+                        <i class="fa-solid fa-earth-europe text-euGold"></i>
+                        <span>Arquitectura Cartográfica • D3.js v7 + TopoJSON</span>
+                    </span>
+                    <h2 class="font-display text-2xl font-extrabold text-white">Código Destacado: Mapa Interactivo de la UE</h2>
+                    <p class="text-slate-400 text-xs sm:text-sm mt-1">
+                        Proyección Mercator centrada en Europa, carga de topología mundial con respaldo GeoJSON local, pines para microestados (Malta y Luxemburgo), zoom/arrastre y tooltip dinámico.
+                    </p>
+                </div>
+                <button onclick="copyMapCode()" id="copy-btn" class="self-start sm:self-auto bg-euBlue hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center space-x-2 cursor-pointer">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>Copiar código</span>
+                </button>
+            </div>
+
+            <!-- Puntos clave del mapa -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl">
+                    <div class="text-euGold font-bold mb-1"><i class="fa-solid fa-layer-group mr-1.5"></i>1. Proyección y Topología</div>
+                    <p class="text-slate-400 leading-relaxed">Usa <code class="text-slate-200">d3.geoMercator()</code> centrada en <code class="text-slate-200">[15.2, 52.8]</code> y convierte datos TopoJSON (<code class="text-slate-200">world-atlas</code>) identificando los 27 países por su código ISO numérico (<code class="text-slate-200">EU_BY_ISO</code>).</p>
+                </div>
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl">
+                    <div class="text-euGold font-bold mb-1"><i class="fa-solid fa-location-dot mr-1.5"></i>2. Pines de Microestados</div>
+                    <p class="text-slate-400 leading-relaxed">Añade círculos interactivos con coordenadas exactas para <strong>Malta</strong> y <strong>Luxemburgo</strong> facilitando su selección incluso sin hacer zoom.</p>
+                </div>
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl">
+                    <div class="text-euGold font-bold mb-1"><i class="fa-solid fa-magnifying-glass-plus mr-1.5"></i>3. Zoom y Tooltip Flotante</div>
+                    <p class="text-slate-400 leading-relaxed">Integra <code class="text-slate-200">d3.zoom()</code> con escala <code class="text-slate-200">[1, 7]</code> y eventos <code class="text-slate-200">mouseenter / mousemove / click</code> que muestran bandera, capital, moneda y población junto al cursor.</p>
+                </div>
+            </div>
+
+            <!-- Bloque de código del mapa -->
+            <div class="relative rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden">
+                <div class="flex items-center justify-between px-4 py-2.5 bg-slate-900/90 border-b border-slate-800 text-[11px] font-mono text-slate-400">
+                    <span>map-engine.js (Fragmento principal del mapa D3.js)</span>
+                    <span class="text-euGold">JavaScript / D3 v7</span>
+                </div>
+                <pre id="map-code-block" class="p-4 sm:p-5 text-xs font-mono text-slate-300 overflow-x-auto leading-relaxed"><code>async function initRealCartographicMap() {
+    const container = document.getElementById('d3-eu-map-container');
+    const loadingEl = document.getElementById('map-loading-state');
+    const badgeEl = document.getElementById('map-source-badge');
+    if (!container) return;
+
+    d3MapInitialized = true;
+    let countriesFeatures = null;
+
+    // 1. Carga de cartografía TopoJSON con fallback GeoJSON local si no hay red
+    try {
+        const worldData = await Promise.any([
+            fetchWithTimeout("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json", 4500),
+            fetchWithTimeout("https://unpkg.com/world-atlas@2/countries-110m.json", 4500)
+        ]);
+        countriesFeatures = topojson.feature(worldData, worldData.objects.countries).features;
+        if (badgeEl) badgeEl.textContent = "Proyección Mercator Real • 27 Miembros UE";
+    } catch (err) {
+        countriesFeatures = getFallbackEuropeGeoJSON();
+        if (badgeEl) badgeEl.textContent = "Cartografía Vectorial Local • 27 Miembros UE";
+    }
+
+    if (loadingEl) loadingEl.remove();
+
+    const width = 880;
+    const height = 600;
+
+    // 2. Creación del lienzo SVG y proyección Mercator centrada en Europa
+    d3Svg = d3.select("#d3-eu-map-container")
+        .append("svg")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .attr("preserveAspectRatio", "xMidYMid meet");
+
+    const projection = d3.geoMercator()
+        .center([15.2, 52.8])
+        .scale(680)
+        .translate([width / 2, height / 2]);
+
+    const pathGenerator = d3.geoPath().projection(projection);
+    const graticule = d3.geoGraticule().step([10, 10]);
+    const mapGroup = d3Svg.append("g").attr("id", "eu-cartography-layer");
+
+    // 3. Dibujo de meridianos/paralelos y polígonos de países
+    mapGroup.append("path")
+        .datum(graticule)
+        .attr("d", pathGenerator)
+        .attr("fill", "none")
+        .attr("stroke", "#0f2347")
+        .attr("stroke-width", 0.65);
+
+    mapGroup.selectAll("path.country-shape")
+        .data(countriesFeatures)
+        .enter()
+        .append("path")
+        .attr("d", pathGenerator)
+        .attr("class", d => {
+            const iso = String(d.id).padStart(3, "0");
+            return EU_BY_ISO[iso] ? "country-shape country-eu" : "country-shape country-non-eu";
+        })
+        .attr("data-country-id", d => {
+            const iso = String(d.id).padStart(3, "0");
+            return EU_BY_ISO[iso] ? EU_BY_ISO[iso].id : "";
+        })
+        .on("mouseenter", function (event, d) {
+            const iso = String(d.id).padStart(3, "0");
+            const country = EU_BY_ISO[iso];
+            if (!country) return;
+            highlightCountryOnMap(country.id, true);
+            showMapTooltip(country, event);
+        })
+        .on("mousemove", function (event, d) {
+            const iso = String(d.id).padStart(3, "0");
+            if (EU_BY_ISO[iso]) positionMapTooltip(event);
+        })
+        .on("mouseleave", function (event, d) {
+            const iso = String(d.id).padStart(3, "0");
+            const country = EU_BY_ISO[iso];
+            if (!country) return;
+            highlightCountryOnMap(country.id, false);
+            hideMapTooltip();
+        })
+        .on("click", function (event, d) {
+            const iso = String(d.id).padStart(3, "0");
+            const country = EU_BY_ISO[iso];
+            if (!country) return;
+            hideMapTooltip();
+            navigateTo("detail", country.id);
+        });
+
+    // 4. Pines interactivos para microestados (Malta y Luxemburgo)
+    const microstates = [
+        { id: "mt", coords: [14.45, 35.9], label: "MT" },
+        { id: "lu", coords: [6.13, 49.81], label: "LU" }
+    ];
+
+    microstates.forEach(ms => {
+        const country = EU_COUNTRIES.find(c => c.id === ms.id);
+        if (!country) return;
+        const [cx, cy] = projection(ms.coords);
+
+        const pinGroup = mapGroup.append("g")
+            .attr("class", "cursor-pointer")
+            .on("mouseenter", (event) => {
+                highlightCountryOnMap(country.id, true);
+                showMapTooltip(country, event);
+            })
+            .on("mousemove", (event) => positionMapTooltip(event))
+            .on("mouseleave", () => {
+                highlightCountryOnMap(country.id, false);
+                hideMapTooltip();
+            })
+            .on("click", () => {
+                hideMapTooltip();
+                navigateTo("detail", country.id);
+            });
+
+        pinGroup.append("circle")
+            .attr("cx", cx)
+            .attr("cy", cy)
+            .attr("r", 7)
+            .attr("data-country-id", country.id)
+            .attr("class", "microstate-pin");
+
+        pinGroup.append("text")
+            .attr("x", cx)
+            .attr("y", cy + 16)
+            .attr("text-anchor", "middle")
+            .attr("fill", "#FFCC00")
+            .attr("font-size", "8.5px")
+            .attr("font-weight", "bold")
+            .text(ms.label);
+    });
+
+    // 5. Control de Zoom y Paneo (arrastre)
+    d3Zoom = d3.zoom()
+        .scaleExtent([1, 7])
+        .on("zoom", (event) => {
+            mapGroup.attr("transform", event.transform);
+        });
+
+    d3Svg.call(d3Zoom);
+}</code></pre>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+        Documentación técnica completa generada a partir del desarrollo de <strong class="text-slate-300">EUROGUÍA UE</strong>.
+    </footer>
+
+    <script>
+        function copyMapCode() {
+            const code = document.getElementById('map-code-block').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.getElementById('copy-btn');
+                btn.innerHTML = '<i class="fa-solid fa-check text-euGold"></i><span>¡Copiado!</span>';
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fa-regular fa-copy"></i><span>Copiar código</span>';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
